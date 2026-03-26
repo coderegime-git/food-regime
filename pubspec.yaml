@@ -1,0 +1,62 @@
+name: food_delivery_app
+description: A modern food delivery application built with Flutter.
+publish_to: 'none'
+version: 1.0.0+2
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Navigation
+  go_router: ^13.0.0
+  # State Management
+  flutter_riverpod: ^2.4.9
+  # UI & Icons
+  cupertino_icons: ^1.0.6
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+  # Utilities
+  intl: ^0.19.0
+  shared_preferences: ^2.2.2
+  # Animations
+  lottie: ^3.3.2
+  dio: ^5.9.2
+  url_launcher:
+  fluttertoast:
+  flutter_staggered_grid_view: ^0.7.0
+  firebase_core: ^4.5.0
+  firebase_messaging: ^16.1.2
+  flutter_local_notifications: ^21.0.0
+  video_player: ^2.11.1
+  flutter_widget_from_html: ^0.17.1
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons:
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/logo.png"
+  min_sdk_android: 21 # android min sdk min:16, default 21
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/json/
+  #    - assets/icons/
+  #    - assets/animations/
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700

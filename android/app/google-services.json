@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "304575478519",
+    "project_id": "foodregime-c72a3",
+    "storage_bucket": "foodregime-c72a3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:304575478519:android:344b89f8ee4b19672cf1f2",
+        "android_client_info": {
+          "package_name": "com.app.foodregime"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3t18z0CwwjW-nDIsP0y2fU5QOoDW7ISs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
