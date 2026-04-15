@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +8,6 @@ import 'package:food_delivery_app/model/home_data.dart' as home_data;
 import 'package:food_delivery_app/model/notification_data.dart';
 import 'package:food_delivery_app/model/order_detail_data.dart';
 import 'package:food_delivery_app/model/profile_data.dart';
-import 'package:food_delivery_app/model/save_address_data.dart';
 import 'package:food_delivery_app/routes/app_routes.dart';
 import 'package:food_delivery_app/utils/sharedpreference_helper.dart';
 import 'package:go_router/go_router.dart';
@@ -20,7 +18,6 @@ import '../model/order_history_data.dart';
 import '../model/restauant_detail_data.dart';
 import '../model/search_result_data.dart';
 import '../model/static_page_data.dart';
-import '../screens/home/search_screen.dart';
 import 'helper.dart';
 
 late GlobalKey<NavigatorState> _navigatorKey;
@@ -78,6 +75,7 @@ class ApiBaseHelper {
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
     }
+
     print(headers);
     return headers;
   }
