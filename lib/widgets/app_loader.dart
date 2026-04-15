@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
+import 'package:food_delivery_app/theme/app_colors.dart';
+import 'package:nb_utils/nb_utils.dart';
 
 class AppDefaultLoader extends StatelessWidget {
   final bool loading;
@@ -14,11 +14,16 @@ class AppDefaultLoader extends StatelessWidget {
     return loading
         ? Center(
             child: Container(
-              width: MediaQuery.of(context).size.width * 0.2,
-              height: MediaQuery.of(context).size.height * 0.05,
-              color: Colors.transparent,
-              child: Lottie.asset('assets/json/circular_loader.json'),
-            ),
+                width: MediaQuery.of(context).size.width * 0.2,
+                height: MediaQuery.of(context).size.height * 0.05,
+                color: Colors.transparent,
+                child: /*Lottie.asset('assets/json/circular_loader.json'),*/
+                    const Loader(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    /*color ??*/
+                    AppColors.primary,
+                  ),
+                )),
           )
         : Container();
   }

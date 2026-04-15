@@ -55,6 +55,7 @@ class AppRoutes {
   static const String aboutApp = '/profile/about';
   static const String wallet = '/profile/wallet';
   static const String confirmOrder = '/confirm-order';
+  static const String searchScreen = '/search-screen';
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
   static String restaurantDetailPath(String id) => '/restaurant/$id';
@@ -153,7 +154,8 @@ class AppRouter {
       // ── Main Shell (Bottom Nav) ────────────────────────────────────────────
       ShellRoute(
         navigatorKey: shellNavigatorKey,
-        builder: (context, state, child) => MainShell(child: child),
+        builder: (context, state, child) =>
+            MainShell(key: mainShellKey, child: child),
         routes: [
           GoRoute(
             path: AppRoutes.home,
@@ -326,6 +328,12 @@ class AppRouter {
             onIncrement: data['onIncrement'],
             onDecrement: data['onDecrement'],
           );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.searchScreen,
+        builder: (context, state) {
+          return const SearchScreen();
         },
       ),
     ],

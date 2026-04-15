@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:food_delivery_app/utils/api_service.dart';
 import 'package:food_delivery_app/utils/notification_service.dart';
 import 'package:food_delivery_app/utils/sharedpreference_helper.dart';
+
 import 'config/app_config.dart';
 import 'firebase_options.dart';
 import 'routes/app_routes.dart';
@@ -58,7 +59,10 @@ class _FoodieGoAppState extends State<FoodieGoApp> {
     final token = await data.getToken();
     if (token != null) {
       SharedPreferenceHelper.setFirebaseToken(token);
-      await ApiService().updateFCMToken(fcm: token);
+      final auhToken = SharedPreferenceHelper.getAuthToken();
+      if (auhToken != null) {
+        await ApiService().updateFCMToken(fcm: token);
+      }
       print("FCM $token");
     }
   }

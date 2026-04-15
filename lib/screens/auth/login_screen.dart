@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:food_delivery_app/routes/app_routes.dart';
@@ -9,7 +9,6 @@ import 'package:food_delivery_app/utils/helper.dart';
 import 'package:food_delivery_app/utils/sharedpreference_helper.dart';
 import 'package:food_delivery_app/utils/validator.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../constants/asset_constants.dart';
 import '../../widgets/common_textform_field.dart';
@@ -88,6 +87,7 @@ class _PhoneEntryState extends State<LoginScreen>
   Widget build(BuildContext context) {
     final pad = MediaQuery.of(context).padding;
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: _C.bg,
       body: Form(
         key: phoneNumberForm,
@@ -315,9 +315,12 @@ class _OtpVerifyState extends State<OtpVerifyScreen>
     Future.delayed(const Duration(milliseconds: 80), () {
       _enterAc.forward();
       _startTimer();
-      Future.delayed(const Duration(milliseconds: 350), () {
+      Future.delayed(const Duration(milliseconds: 350), () async {
         for (int i = 0; i < widget.otp.length; i++) {
           _ctrls[i].text = widget.otp[i];
+        }
+        if (_ctrls.length >= 5) {
+          await _verify();
         }
         //   if (mounted) _nodes[5].requestFocus();
       });
@@ -426,8 +429,8 @@ class _OtpVerifyState extends State<OtpVerifyScreen>
         _successAc.forward();
         await Future.delayed(const Duration(milliseconds: 800));
         if (mounted) {
-          Helper().showToast(
-              context, '🎉  Verified! Welcome to FoodRegime!', data['status']);
+          Helper().showToast(context, '🎉  Verified! Welcome to FoodRegime!',
+              data['statusCode']);
         }
         if (data['first_time_with_role']) {
           if (mounted) {
@@ -451,13 +454,30 @@ class _OtpVerifyState extends State<OtpVerifyScreen>
     }
   }
 
-  void _resend() {
+  void _resend() async {
     if (_tick > 0) return;
     for (final c in _ctrls) c.clear();
     setState(() => _error = false);
     _nodes[0].requestFocus();
     _startTimer();
-    _snack('📱  New code sent to ${widget.phone}');
+    final data = await apiService.sendOTP(phoneNumber: widget.phone);
+
+    print(data);
+    if (data['statusCode'] == 1) {
+      Helper().showToast(context, data['message'], data['statusCode']);
+
+      Future.delayed(const Duration(milliseconds: 350), () async {
+        for (int i = 0; i < data['otp'].toString().length; i++) {
+          _ctrls[i].text = data['otp'].toString()[i];
+        }
+        if (_ctrls.length >= 5) {
+          await _verify();
+        }
+        //   if (mounted) _nodes[5].requestFocus();
+      });
+
+      //   if (mounted) _nodes[5].requestFocus();
+    }
   }
 
   void _snack(String msg) {
@@ -579,30 +599,38 @@ class _OtpVerifyState extends State<OtpVerifyScreen>
                     const SizedBox(height: 20),
 
                     // OTP boxes with shake
-                    AnimatedBuilder(
-                      animation: _shakeX,
-                      builder: (_, child) => Transform.translate(
-                        offset: Offset(_shakeX.value, 0),
-                        child: child,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(
-                            _len,
-                            (i) => ScaleTransition(
-                                  scale: _boxS[i],
-                                  child: _OtpBox(
-                                    ctrl: _ctrls[i],
-                                    node: _nodes[i],
-                                    success: _success,
-                                    error: _error,
-                                    onChanged: (v) => _onChange(i, v),
-                                    onKey: (e) => _onKey(i, e),
-                                  ),
-                                )),
+                    Center(
+                      child: ConstrainedBox(
+                        constraints:
+                            const BoxConstraints(maxWidth: kIsWeb ? 520 : 320),
+                        child: AnimatedBuilder(
+                          animation: _shakeX,
+                          builder: (_, child) => Transform.translate(
+                            offset: Offset(_shakeX.value, 0),
+                            child: child,
+                          ),
+                          child: SizedBox(
+                            width: kIsWeb ? 400 : double.infinity,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: List.generate(
+                                  _len,
+                                  (i) => ScaleTransition(
+                                        scale: _boxS[i],
+                                        child: _OtpBox(
+                                          ctrl: _ctrls[i],
+                                          node: _nodes[i],
+                                          success: _success,
+                                          error: _error,
+                                          onChanged: (v) => _onChange(i, v),
+                                          onKey: (e) => _onKey(i, e),
+                                        ),
+                                      )),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-
                     // Center(
                     //   child: Text('Hint: type "000000" to test wrong OTP',
                     //       style: TextStyle(
@@ -767,7 +795,7 @@ class _OtpBoxState extends State<_OtpBox> {
             focusNode: widget.node,
             textAlign: TextAlign.center,
             keyboardType: TextInputType.number,
-            maxLength: 6,
+            maxLength: 1,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             style: TextStyle(
               fontFamily: _C.font,

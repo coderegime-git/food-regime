@@ -576,11 +576,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           shadowColor: Colors.transparent,
         ),
         child: _isSaving
-            ? const SizedBox(
+            ? SizedBox(
                 width: 22,
                 height: 22,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2.5, color: Colors.white),
+                child:
+                    AppDefaultLoader(loading: _isSaving, color: Colors.white),
               )
             : const Text(
                 'Save Changes',

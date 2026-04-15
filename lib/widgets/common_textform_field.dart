@@ -1,5 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+import 'app_loader.dart';
 
 class AppTextField extends StatelessWidget {
   final TextEditingController ctrl;
@@ -163,12 +164,11 @@ class _PrimaryButton extends StatelessWidget {
           onTap: loading ? null : onTap,
           child: Center(
             child: loading
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation(Colors.white),
+                ? SizedBox(
+                    width: 50,
+                    height: 50,
+                    child: AppDefaultLoader(
+                      loading: loading,
                     ),
                   )
                 : const Row(

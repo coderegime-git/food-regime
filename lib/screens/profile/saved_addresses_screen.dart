@@ -88,7 +88,7 @@ const double kDefaultLongitude = 78.1198; // TODO: replace with map picker value
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const _primary = Color(0xFFFF6B35);
-final _surface = Colors.grey.shade100;
+final _surface = Colors.grey.shade50;
 const _cardBg = Color(0xFFFFFFFF);
 const _textPrimary = Color(0xFF1A1A1A);
 const _textSecondary = Color(0xFF757575);
@@ -267,7 +267,11 @@ class _AddressListScreenState extends State<SavedAddressesScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: _primary));
+      return Center(
+          child: AppDefaultLoader(
+        color: _primary,
+        loading: _isLoading,
+      ));
     }
 
     if (_error != null) {
@@ -938,11 +942,11 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
           elevation: 0,
         ),
         child: _isSaving
-            ? const SizedBox(
+            ? SizedBox(
                 width: 22,
                 height: 22,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2.5, color: Colors.white))
+                child:
+                    AppDefaultLoader(loading: _isSaving, color: Colors.white))
             : Text(
                 _isEditing ? 'Update Address' : 'Save Address',
                 style: const TextStyle(

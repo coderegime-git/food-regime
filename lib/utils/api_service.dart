@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -8,16 +9,19 @@ import 'package:food_delivery_app/model/home_data.dart' as home_data;
 import 'package:food_delivery_app/model/notification_data.dart';
 import 'package:food_delivery_app/model/order_detail_data.dart';
 import 'package:food_delivery_app/model/profile_data.dart';
+import 'package:food_delivery_app/model/save_address_data.dart';
 import 'package:food_delivery_app/routes/app_routes.dart';
 import 'package:food_delivery_app/utils/sharedpreference_helper.dart';
 import 'package:go_router/go_router.dart';
 
 import '../constants/app_constants.dart';
 import '../exception/api_exception.dart';
+import '../model/app_data.dart';
 import '../model/order_history_data.dart';
 import '../model/restauant_detail_data.dart';
 import '../model/search_result_data.dart';
 import '../model/static_page_data.dart';
+import '../screens/home/search_screen.dart';
 import 'helper.dart';
 
 late GlobalKey<NavigatorState> _navigatorKey;
@@ -61,7 +65,8 @@ class ApiBaseHelper {
       case 500:
       default:
         throw FetchDataException(
-            'Error occurred while Communication with Server with StatusCode : ${response.statusCode}');
+            'Error occurred while Communication with Server with StatusCode : ${response
+                .statusCode}');
     }
   }
 
@@ -75,7 +80,6 @@ class ApiBaseHelper {
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
     }
-
     print(headers);
     return headers;
   }
@@ -114,7 +118,7 @@ class ApiBaseHelper {
       print(response.statusCode);
       if (response.statusCode == 200) {
         final newAccessToken =
-            response.data['access_token']; // 👈 adjust key to match your API
+        response.data['access_token']; // 👈 adjust key to match your API
         final newRefreshToken = response
             .data['refresh_token']; // save if your API rotates refresh tokens
 
@@ -169,7 +173,7 @@ class ApiBaseHelper {
       ScaffoldMessenger.of(_navigatorKey.currentContext!).showSnackBar(
         const SnackBar(
           content:
-              Text("Your account has been suspended. Please contact admin."),
+          Text("Your account has been suspended. Please contact admin."),
         ),
       );
       clearUserData();
@@ -318,7 +322,7 @@ class ApiService {
   }
 
   Future<home_data.HomeResponse> getHomeData(page) async {
-    final data = await _helper.get("customer/home/?page$page&limit=5");
+    final data = await _helper.get("customer/home/?page$page&limit=15");
     return home_data.HomeResponse.fromJson(data);
   }
 
@@ -387,11 +391,10 @@ class ApiService {
     return data;
   }
 
-  Future<Map<String, dynamic>> submitReview(
-      {required String orderId,
-      required String restaurantRating,
-      required String riderRating,
-      required String review}) async {
+  Future<Map<String, dynamic>> submitReview({required String orderId,
+    required String restaurantRating,
+    required String riderRating,
+    required String review}) async {
     final data = await _helper.post("orders/$orderId/rate/", {
       "restaurant_rating": restaurantRating,
       "rider_rating": riderRating,
@@ -462,7 +465,7 @@ class ApiService {
     final body = {
       "delivery_address_id": deliveryAddressId,
       "payment_method":
-          paymentMethod.toString().contains("cod") ? "cod" : "online",
+      paymentMethod.toString().contains("cod") ? "cod" : "online",
       "coupon_code": couponCode,
       "use_wallet": useWallet,
       "customer_notes": "No onions please"
@@ -479,6 +482,11 @@ class ApiService {
 
   Future<Map<String, dynamic>> updateFCMToken({required String fcm}) async {
     final res = await _helper.post('auth/fcm-token/', {"fcm_token": fcm});
+    return res;
+  }
+
+  Future<Map<String, dynamic>> deleteFCMToken() async {
+    final res = await _helper.delete('auth/fcm-token/');
     return res;
   }
 
@@ -538,7 +546,7 @@ class ApiService {
   Future<Map<String, dynamic>> addMoneyToWallet(
       {required String amount}) async {
     final res =
-        await _helper.post('customer/wallet/add-funds/', {"amount": amount});
+    await _helper.post('customer/wallet/add-funds/', {"amount": amount});
     return res;
   }
 
@@ -557,5 +565,17 @@ class ApiService {
     final response = await _helper.get(url);
     print(response);
     return response;
+  }
+
+  Future<AppUpdateData> checkUpdateRequired() async {
+    try {
+      final platform = Platform.isAndroid ? "android" : "ios";
+      final res =
+      await _helper.get('app-version/?platform=$platform&role=customer');
+      print(res);
+      return AppUpdateData.fromJson(res);
+    } catch (e) {
+      return AppUpdateData.fromJson({});
+    }
   }
 }

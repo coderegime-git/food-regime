@@ -1586,12 +1586,12 @@ class _ReviewCardState extends State<_ReviewCard> {
                 elevation: 0,
               ),
               child: _submitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
+                  ? SizedBox(
+                      width: 50,
+                      height: 50,
+                      child: AppDefaultLoader(
                         color: Colors.white,
-                        strokeWidth: 2,
+                        loading: _submitting,
                       ),
                     )
                   : const Text(

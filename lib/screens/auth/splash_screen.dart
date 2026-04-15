@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_delivery_app/utils/api_service.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../constants/constants.dart';
 import '../../routes/app_routes.dart';
 import '../../theme/theme.dart';
@@ -33,7 +34,9 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _controller.forward();
-    _navigate();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _navigate();
+    });
   }
 
   Future<void> _navigate() async {

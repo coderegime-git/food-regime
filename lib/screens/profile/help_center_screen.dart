@@ -65,7 +65,9 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
   @override
   Widget build(BuildContext context) {
     return isLoad
-        ? AppDefaultLoader(loading: isLoad)
+        ? Scaffold(
+            backgroundColor: Colors.white,
+            body: AppDefaultLoader(loading: isLoad))
         : Scaffold(
             backgroundColor: Colors.white,
             appBar: AppBar(

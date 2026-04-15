@@ -7,6 +7,7 @@ import 'package:food_delivery_app/model/notification_data.dart';
 import 'package:food_delivery_app/utils/api_service.dart';
 
 import '../../theme/app_colors.dart';
+import '../../widgets/app_loader.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -151,9 +152,11 @@ class _NotificationScreenState extends State<NotificationsScreen> {
             _buildHeader(),
             Expanded(
               child: _isLoading
-                  ? const Center(
-                      child:
-                          CircularProgressIndicator(color: AppColors.primary))
+                  ? Center(
+                      child: AppDefaultLoader(
+                      color: AppColors.primary,
+                      loading: _isLoading,
+                    ))
                   : _notificationData == null ||
                           (_notificationData!.data?.isEmpty ?? true)
                       ? _buildEmptyState()
@@ -248,11 +251,11 @@ class _NotificationScreenState extends State<NotificationsScreen> {
                 ),
                 child: _markingAll
                     ? SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
+                        width: 30,
+                        height: 30,
+                        child: AppDefaultLoader(
                           color: AppColors.primary,
-                          strokeWidth: 2,
+                          loading: _markingAll,
                         ),
                       )
                     : Text(

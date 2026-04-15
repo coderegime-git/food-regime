@@ -1,15 +1,9 @@
 // lib/screens/home/restaurant_detail_screen.dart
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-
-import 'package:flutter/material.dart';
-import 'package:food_delivery_app/model/profile_data.dart';
-import 'package:food_delivery_app/screens/profile/saved_addresses_screen.dart';
 import 'package:food_delivery_app/theme/app_colors.dart';
 import 'package:food_delivery_app/utils/api_service.dart';
-import 'package:food_delivery_app/utils/sharedpreference_helper.dart';
 import 'package:food_delivery_app/widgets/app_loader.dart';
-import 'package:food_delivery_app/widgets/custom_divider.dart';
 
 import '../../constants/app_constants.dart';
 import '../../model/cart_data.dart';
@@ -18,6 +12,7 @@ import '../../model/restauant_detail_data.dart';
 import '../../utils/helper.dart';
 import '../../widgets/empty_card.dart';
 import '../order/confirm_order_screen.dart';
+import 'main_shell.dart';
 
 const kPrimary = AppColors.primary;
 const kPrimaryLight = Color(0xFFFFF4EE);
@@ -148,6 +143,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailScreen> {
       );
 
       await _fetchCart();
+      await mainShellKey.currentState?.fetchCart();
     } catch (e) {
       print("Add to cart error: $e");
     } finally {
@@ -165,6 +161,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailScreen> {
       quantity: newQty,
     );
     await _fetchCart();
+    await mainShellKey.currentState?.fetchCart();
   }
 
   Future<void> _decrement(CartDataItem cartItem) async {
@@ -181,6 +178,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailScreen> {
         );
       }
       await _fetchCart();
+      await mainShellKey.currentState?.fetchCart();
     } finally {
       setState(() => _isLoading = false);
     }
@@ -231,21 +229,26 @@ class _RestaurantDetailPageState extends State<RestaurantDetailScreen> {
           // Cart bar
           if (totalCartCount > 0)
             Positioned(
-              bottom: 55,
+              bottom: 5,
               left: 16,
               right: 16,
-              child: _CartBar(
-                count: totalCartCount,
-                total: _totalCartPrice,
-                onTap: _goToConfirm,
+              child: SafeArea(
+                child: _CartBar(
+                  count: totalCartCount,
+                  total: _totalCartPrice,
+                  onTap: _goToConfirm,
+                ),
               ),
             ),
           if (_isLoading)
-            const Positioned.fill(
+            Positioned.fill(
               child: ColoredBox(
                 color: Colors.black12,
-                child:
-                    Center(child: CircularProgressIndicator(color: kPrimary)),
+                child: Center(
+                    child: AppDefaultLoader(
+                  color: kPrimary,
+                  loading: _isLoading,
+                )),
               ),
             ),
         ],
@@ -259,14 +262,24 @@ class _RestaurantDetailPageState extends State<RestaurantDetailScreen> {
       pinned: true,
       backgroundColor: Colors.white,
       foregroundColor: kText,
+      leadingWidth: 50,
       leading: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        margin: const EdgeInsets.symmetric(horizontal: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.grey.shade300, spreadRadius: 1, blurRadius: 1)
+            ]),
         child: GestureDetector(
           onTap: () {
             Navigator.of(context).pop();
           },
           child: const Icon(
             Icons.arrow_back_ios,
+            size: 18,
             color: kText,
           ),
         ),
@@ -452,7 +465,7 @@ class _RestaurantDetailPageState extends State<RestaurantDetailScreen> {
             final items = entry.value;
 
             final isExpanded = _expandedSections[category] ?? true;
-            final label = category == 'veg' ? '🥦 Veg' : '🍗 Non-Veg';
+            final label = category/*== 'veg' ? '🥦 Veg' : '🍗 Non-Veg'*/;
             return Column(
               children: [
                 if (index != 0)
@@ -691,8 +704,8 @@ class _MenuCard extends StatelessWidget {
         if (index != items.length - 1)
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8),
-            child: const DottedDivider(
-              gap: 5,
+            child: const _DashedDivider(
+              showCut: false,
             ),
           )
       ],
@@ -915,11 +928,13 @@ class _CouponPageState extends State<CouponPage> {
                   ),
                   child: _validatingCode != null &&
                           _validatingCode == _codeCtrl.text.trim().toUpperCase()
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2.5))
+                      ? SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: AppDefaultLoader(
+                            color: Colors.white,
+                            loading: true,
+                          ))
                       : const Text(
                           'APPLY',
                           style: TextStyle(
@@ -985,7 +1000,11 @@ class _CouponPageState extends State<CouponPage> {
 
   Widget _buildCouponList() {
     if (_loadingCoupons) {
-      return const Center(child: CircularProgressIndicator(color: kPrimary));
+      return Center(
+          child: AppDefaultLoader(
+        color: kPrimary,
+        loading: _loadingCoupons,
+      ));
     }
     if (_coupons.isEmpty) {
       return const Center(
@@ -1195,11 +1214,13 @@ class _CouponCard extends StatelessWidget {
                       ),
                     ),
                     child: isValidating
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                                color: kPrimary, strokeWidth: 2))
+                        ? SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: AppDefaultLoader(
+                              color: kPrimary,
+                              loading: isValidating,
+                            ))
                         : Text(
                             isApplied ? 'REMOVE' : 'APPLY',
                             style: TextStyle(
@@ -1235,8 +1256,9 @@ class _CouponCard extends StatelessWidget {
 // Dashed divider with scissors
 class _DashedDivider extends StatelessWidget {
   final bool invalid;
+  final bool showCut;
 
-  const _DashedDivider({this.invalid = false});
+  const _DashedDivider({this.invalid = false, this.showCut = true});
 
   @override
   Widget build(BuildContext context) {
@@ -1266,11 +1288,12 @@ class _DashedDivider extends StatelessWidget {
           ),
         ),
         // scissors icon
-        Icon(
-          Icons.content_cut_rounded,
-          size: 16,
-          color: invalid ? Colors.grey.shade300 : kSubText.withOpacity(0.4),
-        ),
+        if (showCut)
+          Icon(
+            Icons.content_cut_rounded,
+            size: 16,
+            color: invalid ? Colors.grey.shade300 : kSubText.withOpacity(0.4),
+          ),
         // right notch
         Transform.translate(
           offset: const Offset(10, 0),

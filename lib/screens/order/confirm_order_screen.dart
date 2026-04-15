@@ -1,31 +1,22 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../model/cart_data.dart';
-import '../../model/home_data.dart' show Coupon;
 import '../../model/profile_data.dart';
+import '../../model/restauant_detail_data.dart';
 import '../../routes/app_routes.dart';
 import '../../utils/api_service.dart';
-import '../../utils/helper.dart';
 import '../../utils/sharedpreference_helper.dart';
+import '../../widgets/app_loader.dart';
+import '../home/main_shell.dart';
 import '../home/restaurant_detail_screen.dart';
 import '../profile/saved_addresses_screen.dart';
-import '../../model/restauant_detail_data.dart';
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  ConfirmOrderPage  –  redesigned with animated place-order button,
-//  3-step placing flow (loading → confirming → success) & premium card UI
-// ─────────────────────────────────────────────────────────────────────────────
-
-import 'dart:math' as math;
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 // ── Colour tokens ──────────────────────────────────────────────────────────
-const kBg = Color(0xFFF7F3EF);
+Color kBg = Colors.grey.shade50;
 const kPrimary = Color(0xFFFF5722);
 const kPrimaryLight = Color(0xFFFFF0EB);
 const kText = Color(0xFF1A1A1A);
@@ -176,12 +167,13 @@ class _ConfirmOrderPageState extends State<ConfirmOrderPage>
         couponCode: _appliedCoupon ?? '',
         useWallet: _useWallet,
       );
-      final delay = Future.delayed(const Duration(milliseconds: 2200));
+      final delay = Future.delayed(const Duration(milliseconds: 10));
       final results = await Future.wait([apiCall, delay]);
       final res = results[0] as Map<String, dynamic>;
 
       if (res['statusCode'] == 1) {
         await _apiService.removeAllCart();
+        await mainShellKey.currentState?.fetchCart();
 
         // Step 3 – confirming flash
         setState(() => _placeState = _PlaceState.confirming);
@@ -261,8 +253,9 @@ class _ConfirmOrderPageState extends State<ConfirmOrderPage>
       extendBodyBehindAppBar: false,
       appBar: _buildAppBar(),
       body: _loadingPreview && _preview == null
-          ? const Center(
-              child: CircularProgressIndicator(color: kPrimary, strokeWidth: 2))
+          ? Center(
+              child:
+                  AppDefaultLoader(color: kPrimary, loading: _loadingPreview))
           : CustomScrollView(
               slivers: [
                 SliverPadding(
@@ -288,8 +281,10 @@ class _ConfirmOrderPageState extends State<ConfirmOrderPage>
                 ),
               ],
             ),
-      bottomNavigationBar:
-          SingleChildScrollView(child: SafeArea(child: _buildPlaceOrderBar())),
+      bottomNavigationBar: _loadingPreview
+          ? null
+          : SingleChildScrollView(
+              child: SafeArea(child: _buildPlaceOrderBar())),
     );
   }
 
@@ -350,12 +345,15 @@ class _ConfirmOrderPageState extends State<ConfirmOrderPage>
           Container(
             width: 42,
             height: 42,
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.storefront_rounded,
-                color: Colors.white, size: 22),
+            child: CachedNetworkImage(
+              imageUrl: widget.restaurant.restaurantImage,
+              fit: BoxFit.cover,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -897,12 +895,14 @@ class _ConfirmOrderPageState extends State<ConfirmOrderPage>
                     ],
                   ),
                   child: isLoading
-                      ? const Center(
+                      ? Center(
                           child: SizedBox(
                             width: 24,
                             height: 24,
-                            child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2.5),
+                            child: AppDefaultLoader(
+                              color: Colors.white,
+                              loading: isLoading,
+                            ),
                           ),
                         )
                       : isConfirming

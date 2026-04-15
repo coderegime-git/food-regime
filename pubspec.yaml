@@ -1,7 +1,7 @@
 name: food_delivery_app
 description: A modern food delivery application built with Flutter.
 publish_to: 'none'
-version: 1.0.0+2
+version: 1.0.0+7
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -32,6 +32,7 @@ dependencies:
   flutter_local_notifications: ^21.0.0
   video_player: ^2.11.1
   flutter_widget_from_html: ^0.17.1
+  nb_utils: ^7.2.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -40,6 +41,11 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
+  web:
+    generate: true
+    image_path: "assets/images/logo.png"
+    background_color: "#hexcode"
+    theme_color: "#hexcode"
   image_path: "assets/images/logo.png"
   min_sdk_android: 21 # android min sdk min:16, default 21
 

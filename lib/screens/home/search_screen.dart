@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../model/search_result_data.dart';
 import '../../routes/app_routes.dart';
 import '../../utils/api_service.dart';
+import '../../widgets/app_loader.dart';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -174,7 +175,11 @@ class _SearchScreenState extends State<SearchScreen>
 
   Widget _buildBody() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: kAccent));
+      return Center(
+          child: AppDefaultLoader(
+        color: kAccent,
+        loading: _loading,
+      ));
     }
     if (_error != null) return _ErrorState(message: _error!);
     if (_query.isEmpty) return const _IdleState();

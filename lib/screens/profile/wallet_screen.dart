@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 
 import '../../model/walllet_data.dart';
 import '../../utils/api_service.dart';
+import '../../widgets/app_loader.dart';
 
 class AddMoneyResponse {
   final int statusCode;
@@ -33,7 +34,7 @@ class AddMoneyResponse {
 }
 
 const _kPrimary = Color(0xFFFF5722);
-const _kBg = Color(0xFFF7F3EF);
+Color _kBg = Colors.grey.shade50;
 const _kCard = Colors.white;
 const _kText = Color(0xFF1A1A1A);
 const _kSub = Color(0xFF6B6B6B);
@@ -93,6 +94,7 @@ class _WalletPageState extends State<WalletPage>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _AddMoneySheet(
         currentBalance: _data?.walletBalance ?? 0,
@@ -116,9 +118,7 @@ class _WalletPageState extends State<WalletPage>
       backgroundColor: _kBg,
       appBar: _buildAppBar(),
       body: _loading
-          ? const Center(
-              child:
-                  CircularProgressIndicator(color: _kPrimary, strokeWidth: 2))
+          ? Center(child: AppDefaultLoader(color: _kPrimary, loading: _loading))
           : RefreshIndicator(
               color: _kPrimary,
               onRefresh: _fetchWallet,
@@ -203,6 +203,7 @@ class _WalletPageState extends State<WalletPage>
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       titleSpacing: 0,
+      shadowColor: Colors.grey.shade200,
       backgroundColor: _kBg,
       elevation: 0,
       leading: GestureDetector(
@@ -240,7 +241,7 @@ class _WalletPageState extends State<WalletPage>
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.lightGreen.shade400, Colors.green.shade300],
+          colors: [Colors.lightGreen.shade600, Colors.green.shade600],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -248,8 +249,8 @@ class _WalletPageState extends State<WalletPage>
         boxShadow: [
           BoxShadow(
             color: Colors.green.withOpacity(0.4),
-            blurRadius: 28,
-            offset: const Offset(0, 10),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -286,7 +287,7 @@ class _WalletPageState extends State<WalletPage>
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 15),
           Text(
             'Available Balance',
             style: TextStyle(
@@ -308,7 +309,7 @@ class _WalletPageState extends State<WalletPage>
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
           // Bottom: add money button
           GestureDetector(
             onTap: _openAddMoney,
@@ -592,7 +593,7 @@ class _AddMoneySheetState extends State<_AddMoneySheet> {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 8, 20, 24 + bottom),
+      padding: EdgeInsets.fromLTRB(20, 8, 20, 55 + bottom),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -815,10 +816,9 @@ class _AddMoneySheetState extends State<_AddMoneySheet> {
               ),
               child: _loading
                   ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2.5),
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(),
                     )
                   : Text(
                       _amount != null && _amount! > 0

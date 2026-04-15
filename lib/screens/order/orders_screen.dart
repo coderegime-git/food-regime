@@ -1,5 +1,4 @@
 // lib/screens/order/orders_screen.dart
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:food_delivery_app/model/order_history_data.dart';
 import 'package:food_delivery_app/theme/theme.dart';
@@ -9,7 +8,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../routes/app_routes.dart';
 import '../../widgets/empty_card.dart';
-import 'order_detail_screen.dart';
 
 enum OrderStatus {
   placed,
@@ -146,8 +144,11 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
       backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
         child: _initialLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.primary))
+            ? Center(
+                child: AppDefaultLoader(
+                color: AppColors.primary,
+                loading: _initialLoading,
+              ))
             : Column(
                 children: [
                   _buildHeader(),
@@ -415,14 +416,14 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
 
   Widget _buildBottomIndicator() {
     if (_paginationLoading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
         child: Center(
           child: SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(
-                color: AppColors.primary, strokeWidth: 2.5),
+            width: 50,
+            height: 50,
+            child: AppDefaultLoader(
+                color: AppColors.primary, loading: _paginationLoading),
           ),
         ),
       );

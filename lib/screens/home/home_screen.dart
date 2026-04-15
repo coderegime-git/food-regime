@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'dart:math' as math;
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -6,19 +8,19 @@ import 'package:food_delivery_app/constants/app_constants.dart';
 import 'package:food_delivery_app/model/home_data.dart';
 import 'package:food_delivery_app/model/profile_data.dart';
 import 'package:food_delivery_app/routes/app_routes.dart';
-import 'package:food_delivery_app/screens/home/search_screen.dart';
 import 'package:food_delivery_app/screens/profile/saved_addresses_screen.dart';
-import 'package:food_delivery_app/theme/app_colors.dart';
 import 'package:food_delivery_app/utils/api_service.dart';
 import 'package:food_delivery_app/utils/helper.dart';
 import 'package:food_delivery_app/utils/sharedpreference_helper.dart';
 import 'package:food_delivery_app/widgets/app_loader.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nb_utils/nb_utils.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../model/cart_data.dart';
 import '../../model/restauant_detail_data.dart' as res;
-import '../order/confirm_order_screen.dart';
+import '../../widgets/filter.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -28,7 +30,7 @@ class _T {
   static const orange = Color(0xFFFF6B35);
   static const ink = Color(0xFF1C1C1E);
   static const muted = Color(0xFF8A8A8E);
-  static const bg = Color(0xFFF7F3EF);
+  static Color bg = Colors.grey.shade200;
   static const card = Colors.white;
   static const String font = 'Poppins';
 }
@@ -65,6 +67,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool isLoadingMore = false;
   bool hasNextPage = true;
   List<Restaurant> restaurantList = [];
+  FilterState _filterState = const FilterState();
+
+  List<Restaurant> get _filteredRestaurants =>
+      applyFilters(restaurantList, _filterState);
 
   @override
   void initState() {
@@ -156,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Future<void> _init() async {
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent - 200 &&
+              _scrollController.position.maxScrollExtent - 200 &&
           !isLoadingMore &&
           hasNextPage) {
         loadMoreRestaurants();
@@ -164,6 +170,42 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
     await getHomeData();
     _setupAnimations();
+
+    final appUpdateData = await apiService.checkUpdateRequired();
+    if (!mounted) return;
+    if (appUpdateData != null && appUpdateData.data != null) {
+      if (appUpdateData.data!.versionName!.toLowerCase().trim() !=
+          AppConstants.appVersion.toLowerCase().trim()) {
+        print(appUpdateData.data!.versionName);
+        print(AppConstants.appVersion);
+        if (appUpdateData.data!.needUpdate == true) {
+          await UpdateDialog.show(
+              context: context,
+              type: appUpdateData.data!.isForceUpdate == true
+                  ? UpdateType.force
+                  : UpdateType.normal,
+              currentVersion: AppConstants.oldVersion,
+              newVersion: appUpdateData.data!.versionName.toString(),
+              releaseNotes: appUpdateData.data!.updateMessage ??
+                  "A new version of the app is available with improvements and new features.",
+              onUpdate: () async {
+                final Uri url;
+                if (Platform.isAndroid) {
+                  url = Uri.parse(
+                      "https://play.google.com/store/apps/details?id=com.app.foodregime");
+                } else {
+                  url = Uri.parse("https://apps.apple.com/app/id12345678");
+                }
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+
+                  //   if (mounted) Navigator.of(context).pop();
+                }
+              });
+          return;
+        }
+      }
+    }
   }
 
   Future<void> loadMoreRestaurants() async {
@@ -251,8 +293,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Widget _animate(int i, Widget child) =>
-      FadeTransition(
+  Widget _animate(int i, Widget child) => FadeTransition(
         opacity: _fadeAnims[i],
         child: SlideTransition(position: _slideAnims[i], child: child),
       );
@@ -302,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               child: CachedNetworkImage(
                 imageUrl: restaurant.image ?? "",
-                height: 90,
+                height: kIsWeb ? 110 : 90,
                 width: double.infinity,
                 fit: BoxFit.cover,
               ),
@@ -323,6 +364,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
+                  if (kIsWeb) ...[
+                    Text(
+                      restaurant.address ?? "",
+                      style: const TextStyle(fontSize: 11, color: Colors.black),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -375,11 +425,66 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   child: _animate(
                     1,
                     _CategoriesRow(
+                      filterState: _filterState,
+                      onFilterChange: (n) {
+                        setState(() {
+                          _filterState = n;
+                        });
+                      },
                       selected: _catIndex,
                       onSelect: (i) => setState(() => _catIndex = i),
                     ),
                   ),
                 ),
+              // SliverToBoxAdapter(
+              //   child: _animate(
+              //       1,
+              //       GestureDetector(
+              //         onTap: () {
+              //           showModalBottomSheet(
+              //             context: context,
+              //             isScrollControlled: true,
+              //             // ← allows the sheet to be taller
+              //             shape: const RoundedRectangleBorder(
+              //               borderRadius:
+              //                   BorderRadius.vertical(top: Radius.circular(24)),
+              //             ),
+              //             builder: (_) => SafeArea(
+              //               child: CategoryFilterBar(
+              //                 categories: AppConstants.categories ?? [],
+              //                 filterState: _filterState,
+              //                 onFilterChanged: (newState) {
+              //                   setState(() => _filterState = newState);
+              //                 },
+              //               ),
+              //             ),
+              //           );
+              //         },
+              //         child: Stack(
+              //           clipBehavior: Clip.none,
+              //           children: [
+              //             const Padding(
+              //               padding: EdgeInsets.only(left: 10),
+              //               child: Icon(Icons.filter_list_sharp),
+              //             ),
+              //             // Red dot when filters are active
+              //             if (_filterState.isActive)
+              //               Positioned(
+              //                 top: -2,
+              //                 right: -2,
+              //                 child: Container(
+              //                   width: 8,
+              //                   height: 8,
+              //                   decoration: const BoxDecoration(
+              //                     color: Color(0xFFE23744),
+              //                     shape: BoxShape.circle,
+              //                   ),
+              //                 ),
+              //               ),
+              //           ],
+              //         ),
+              //       )),
+              // ),
 
               // ── POPULAR PICKS
               if (homeData.data?.popularFoods != null)
@@ -396,10 +501,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: Container(
                   decoration: BoxDecoration(
                       gradient: LinearGradient(colors: [
-                        Colors.lightBlue.shade200,
-                        Colors.lightBlue.shade100,
-                        Colors.white,
-                      ])),
+                    Colors.deepOrange.shade200,
+                    Colors.yellow.shade100,
+                    Colors.white,
+                  ])),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -416,17 +521,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 15),
                       SizedBox(
-                        height: 310,
+                        height: kIsWeb ? 390 : 310,
                         child: GridView.builder(
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           itemCount: homeData.data!.popularRestaurants!.length,
                           gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
+                              const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2, // 2 rows
                             crossAxisSpacing: 10,
-                            mainAxisSpacing: 15,
-                            childAspectRatio: 1.2,
+                            mainAxisSpacing: kIsWeb ? 20 : 15,
+                            childAspectRatio: kIsWeb ? 0.7 : 1.2,
                           ),
                           itemBuilder: (context, index) {
                             return _pRestaurantCard(
@@ -453,44 +558,145 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
               // ── RESTAURANT LIST
               if (homeData.restaurants?.results != null)
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                        (_, i) {
-                      if (i == 4) {
-                        return Column(
-                          children: [
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            _PopularSection(homeData.data!.popularFoods!),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                          ],
-                        );
-                      }
+                kIsWeb
+                    ? SliverGrid(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, i) {
+                            if (_filteredRestaurants.isEmpty) {
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 60, horizontal: 32),
+                                  child: Column(
+                                    children: [
+                                      Icon(Icons.search_off_rounded,
+                                          size: 56,
+                                          color: Colors.grey.shade300),
+                                      const SizedBox(height: 16),
+                                      const Text(
+                                        'No restaurants match your filters',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF1C1C1E),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      GestureDetector(
+                                        onTap: () => setState(() =>
+                                            _filterState = const FilterState()),
+                                        child: const Text(
+                                          'Clear filters',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFFE23744),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
 
-                      final index = i > 4 ? i - 1 : i;
-                      if (index >= restaurantList.length) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(20),
-                            child: CircularProgressIndicator(
-                              color: _T.primary,
+                            if (i >= _filteredRestaurants.length) {
+                              return const Center(
+                                child: AppDefaultLoader(
+                                  color: _T.primary,
+                                  loading: true,
+                                ),
+                              );
+                            }
+                            return _RestaurantCard(r: _filteredRestaurants[i]);
+                          },
+                          childCount: _filteredRestaurants.length,
+                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 420,
+                          mainAxisSpacing: 20,
+                          crossAxisSpacing: 0,
+                          childAspectRatio: 1.1,
+                        ),
+                      )
+                    : _filteredRestaurants.isEmpty
+                        ? SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 60, horizontal: 32),
+                              child: Column(
+                                children: [
+                                  Icon(Icons.search_off_rounded,
+                                      size: 56, color: Colors.grey.shade300),
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'No restaurants match your filters',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF1C1C1E),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  GestureDetector(
+                                    onTap: () => setState(() =>
+                                        _filterState = const FilterState()),
+                                    child: const Text(
+                                      'Clear filters',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFFE23744),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (_, i) {
+                                print(_filteredRestaurants);
+                                print("_filteredRestaurants");
+
+                                if (i == 4) {
+                                  return Column(
+                                    children: [
+                                      const SizedBox(height: 10),
+                                      _PopularSection(
+                                          homeData.data!.popularFoods!),
+                                      const SizedBox(height: 10),
+                                    ],
+                                  );
+                                }
+
+                                final index = i > 4 ? i - 1 : i;
+                                if (index >= _filteredRestaurants.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(20),
+                                    child: Center(
+                                      child: AppDefaultLoader(
+                                        color: _T.primary,
+                                        loading: true,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return _animate(
+                                  4,
+                                  _RestaurantCard(
+                                      r: _filteredRestaurants[index]),
+                                );
+                              },
+                              childCount: _filteredRestaurants.length >= 3
+                                  ? _filteredRestaurants.length + 1
+                                  : _filteredRestaurants.length,
                             ),
                           ),
-                        );
-                      }
-
-                      return _animate(
-                        4,
-                        _RestaurantCard(
-                            r: homeData.restaurants!.results![index]),
-                      );
-                    },
-                    childCount: homeData.restaurants!.results!.length + 1,
-                  ),
-                ),
               // SliverToBoxAdapter(
               //   child: PopularRestaurantsScreen(
               //       restaurants: homeData.data!.popularRestaurants ?? []),
@@ -498,17 +704,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
               SliverToBoxAdapter(
                 child: isLoadingMore
-                    ? const Column(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                    SizedBox(
-                      height: 120,
-                    )
-                  ],
-                )
+                    ? Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Center(
+                                child: AppDefaultLoader(
+                              loading: isLoadingMore,
+                            )),
+                          ),
+                          const SizedBox(
+                            height: 120,
+                          )
+                        ],
+                      )
                     : const SizedBox(),
               ),
               if (!isLoadingMore)
@@ -530,7 +739,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                         Image.asset(
                           "assets/images/end.jpg",
-                          height: 200,
+                          height: kIsWeb ? 500 : 200,
                           fit: BoxFit.cover,
                           width: double.infinity,
                         ),
@@ -541,20 +750,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               // const SliverToBoxAdapter(child: SizedBox(height: 80)),
             ],
           ),
-          if (totalCartCount > 0)
-            Positioned(
-              bottom: 130,
-              left: 16,
-              right: 16,
-              child: CartBottomBar(
-                restaurant: restaurant,
-                cardLoad: cardLoad,
-                count: totalCartCount,
-                total: _totalCartPrice,
-                onTap: _goToConfirm,
-                onDismiss: () {},
-              ),
-            ),
+          // if (totalCartCount > 0)
+          //   Positioned(
+          //     bottom: 15,
+          //     left: 16,
+          //     right: 16,
+          //     child: SafeArea(
+          //       child: CartBottomBar(
+          //         restaurant: restaurant,
+          //         cardLoad: cardLoad,
+          //         count: totalCartCount,
+          //         total: _totalCartPrice,
+          //         onTap: _goToConfirm,
+          //         onDismiss: () {},
+          //       ),
+          //     ),
+          //   ),
         ],
       ),
     );
@@ -588,21 +799,28 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
   // Food GIF URLs (looping food animations from giphy public CDN)
   static const _foodGifs = [
     // burger sizzle
+    'assets/images/flash-sale.mp4',
+    'assets/images/festival-offer.mp4',
 
-    'assets/images/flash_sale.mp4',
-    'assets/images/discount.mp4',
-    'assets/images/offers_video.mp4',
+    'assets/images/banner.jpg',
+
+    'assets/images/flash-sale.mp4',
+    'assets/images/festival-offer.mp4',
+    'assets/images/flash-sale.mp4',
 
     // pizza
-    'assets/images/offers_video.mp4',
+    'assets/images/festival-offer.mp4',
     // noodles
-    'assets/images/offers_video.mp4',
+    'assets/images/flash-sale.mp4',
     // tacos
   ];
 
   static const _offerColors = [
     [Color(0xFF0D0D0D), Color(0xFF8B0000)],
-    [Color(0xFF001F3F), Color(0xFF0074D9)],
+    [
+      Colors.purple,
+      Colors.pink,
+    ],
     [Color(0xFF1A0030), Color(0xFF7B2D8B)],
     [Color(0xFF003300), Color(0xFF006400)],
   ];
@@ -613,8 +831,7 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
     _bgAc = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 8),
-    )
-      ..repeat();
+    )..repeat();
     _pageCtrl = PageController();
 
     // Auto-scroll banners
@@ -632,6 +849,8 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
     Future.delayed(const Duration(seconds: 10), _autoScroll);
   }
 
+  // Derived list — always read this in build(), never restaurantList directly
+
   @override
   void dispose() {
     _bgAc.dispose();
@@ -641,14 +860,10 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final top = MediaQuery
-        .of(context)
-        .padding
-        .top;
-    final h = MediaQuery
-        .of(context)
-        .size
-        .height * 0.52;
+    final top = MediaQuery.of(context).padding.top;
+    final h = kIsWeb
+        ? MediaQuery.of(context).size.height * 0.7
+        : MediaQuery.of(context).size.height * 0.52;
 
     return SizedBox(
       height: h + 24,
@@ -713,19 +928,18 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
                     math.max(widget.coupons.length, 1),
-                        (i) =>
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          margin: const EdgeInsets.symmetric(horizontal: 3),
-                          width: _currentPage == i ? 22 : 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: _currentPage == i
-                                ? Colors.white
-                                : Colors.white.withOpacity(0.35),
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                        ),
+                    (i) => AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: _currentPage == i ? 22 : 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: _currentPage == i
+                            ? Colors.white
+                            : Colors.white.withOpacity(0.35),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -773,7 +987,7 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
                                 Flexible(
                                   child: Text(
                                     widget.profileData?.data?.defaultAddress
-                                        ?.fullAddress ??
+                                            ?.fullAddress ??
                                         'Select address',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -812,7 +1026,7 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
                               setState(() {});
                             },
                             child:
-                            _AvatarPill(profileData: widget.profileData)),
+                                _AvatarPill(profileData: widget.profileData)),
                       ],
                     ),
                   ),
@@ -888,13 +1102,14 @@ class _AnimatedFoodGifState extends State<_AnimatedFoodGif> {
 
   void _loadVideo() {
     final url = widget.gifUrls[widget.pageIndex];
-
-    _controller = VideoPlayerController.asset(url)
-      ..initialize().then((_) {
-        _controller.setLooping(true);
-        _controller.play();
-        setState(() {});
-      });
+    if (url.contains(".mp4")) {
+      _controller = VideoPlayerController.asset(url)
+        ..initialize().then((_) {
+          _controller.setLooping(true);
+          _controller.play();
+          setState(() {});
+        });
+    }
   }
 
   @override
@@ -914,12 +1129,38 @@ class _AnimatedFoodGifState extends State<_AnimatedFoodGif> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_controller.value.isInitialized) {
+    if (!_controller.value.isInitialized &&
+        widget.gifUrls[widget.pageIndex].contains(".mp4")) {
       return const SizedBox(width: 170, height: 170);
     }
+    if (kIsWeb) {
+      double h = MediaQuery.of(context).size.height * (kIsWeb ? 0.6 : 0.25);
 
+      return SizedBox(
+        width: double.infinity,
+        height: h,
+        child: ClipRect(
+          child: FittedBox(
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+            child: widget.gifUrls[widget.pageIndex].contains(".mp4")
+                ? SizedBox(
+                    width: _controller.value.size.width,
+                    height: _controller.value.size.height,
+                    child: VideoPlayer(_controller),
+                  )
+                : Image.asset(
+                    widget.gifUrls[widget.pageIndex],
+                    fit: BoxFit.cover,
+                  ),
+          ),
+        ),
+      );
+    }
     return SizedBox(
-      child: VideoPlayer(_controller),
+      child: !widget.gifUrls[widget.pageIndex].contains(".mp4")
+          ? Image.asset(widget.gifUrls[widget.pageIndex], fit: BoxFit.cover)
+          : VideoPlayer(_controller),
     );
   }
 }
@@ -1075,11 +1316,9 @@ class _HeroSearch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () =>
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const SearchScreen()),
-          ),
+      onTap: () => context.push(
+        AppRoutes.searchScreen,
+      ),
       child: Container(
         height: 48,
         decoration: BoxDecoration(
@@ -1145,7 +1384,7 @@ class _IconPill extends StatelessWidget {
             color: Colors.white.withOpacity(0.15),
             borderRadius: BorderRadius.circular(12),
             border:
-            Border.all(color: Colors.white.withOpacity(0.25), width: 1.2),
+                Border.all(color: Colors.white.withOpacity(0.25), width: 1.2),
           ),
           child: Icon(icon, color: Colors.white, size: 19),
         ),
@@ -1220,8 +1459,8 @@ class _LavaLampPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // Dark base
     final bg = Paint()
-      ..shader = LinearGradient(
-        colors: const [Color(0xFF0D0000), Color(0xFF1A0A00), Color(0xFF2D0505)],
+      ..shader = const LinearGradient(
+        colors: [Color(0xFF0D0000), Color(0xFF1A0A00), Color(0xFF2D0505)],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
@@ -1303,18 +1542,89 @@ class _BlobDef {
 // ─────────────────────────────────────────────────────────────────────────────
 class _CategoriesRow extends StatelessWidget {
   final int selected;
+  final FilterState filterState;
   final ValueChanged<int> onSelect;
+  final ValueChanged<FilterState> onFilterChange;
 
-  const _CategoriesRow({required this.selected, required this.onSelect});
+  const _CategoriesRow(
+      {required this.selected,
+      required this.onSelect,
+      required this.onFilterChange,
+      required this.filterState});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionHeading(title: "What brings you here today?", sub: null),
+        const SizedBox(
+          height: 10,
+        ),
+        Row(
+          children: [
+            const Expanded(
+              //width: 150,
+              child: _SectionHeading(
+                  title: "What brings you here today?", sub: null),
+            ),
+            GestureDetector(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  // ← allows the sheet to be taller
+                  shape: const RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(24)),
+                  ),
+                  builder: (_) => SafeArea(
+                    child: CategoryFilterBar(
+                      categories: AppConstants.categories ?? [],
+                      filterState: filterState,
+                      onFilterChanged: (newState) {
+                        onFilterChange(newState);
+                      },
+                    ),
+                  ),
+                );
+              },
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 10),
+                    child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            gradient: const LinearGradient(
+                                colors: [_T.primary, K.yellow])),
+                        child: const Icon(LineIcons.filter)),
+                  ),
+                  // Red dot when filters are active
+                  if (filterState.isActive)
+                    Positioned(
+                      top: -2,
+                      right: -2,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(
+              width: 15,
+            )
+          ],
+        ),
         SizedBox(
-          height: 100,
+          height: 90,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
@@ -1329,31 +1639,31 @@ class _CategoriesRow extends StatelessWidget {
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeOutCubic,
                   margin:
-                  const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     color: sel ? _T.primary : _T.card,
-                    borderRadius: BorderRadius.circular(25),
+                    borderRadius: BorderRadius.circular(15),
                     border: Border.all(
                       color: sel ? _T.primary : Colors.grey.shade100,
                       width: 1.5,
                     ),
                     boxShadow: sel
                         ? [
-                      BoxShadow(
-                        color: _T.primary.withOpacity(0.38),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      )
-                    ]
+                            BoxShadow(
+                              color: _T.primary.withOpacity(0.38),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            )
+                          ]
                         : [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      )
-                    ],
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            )
+                          ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -1369,7 +1679,7 @@ class _CategoriesRow extends StatelessWidget {
                             : null,
                         child: (data.image?.isEmpty != false)
                             ? Icon(Icons.fastfood,
-                            size: 14, color: sel ? Colors.white : _T.muted)
+                                size: 14, color: sel ? Colors.white : _T.muted)
                             : null,
                       ),
                       const SizedBox(height: 5),
@@ -1385,7 +1695,7 @@ class _CategoriesRow extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             fontWeight: FontWeight.w600,
                             color:
-                            sel ? Colors.white : _T.ink.withOpacity(0.65),
+                                sel ? Colors.white : _T.ink.withOpacity(0.65),
                           ),
                         ),
                       ),
@@ -1489,13 +1799,12 @@ class _PopularCard extends StatelessWidget {
                 child: CachedNetworkImage(
                   imageUrl: p.image ?? '',
                   fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) =>
-                      Container(
-                        color: accent,
-                        child: const Center(
-                          child: Text('🍽️', style: TextStyle(fontSize: 40)),
-                        ),
-                      ),
+                  errorWidget: (_, __, ___) => Container(
+                    color: accent,
+                    child: const Center(
+                      child: Text('🍽️', style: TextStyle(fontSize: 40)),
+                    ),
+                  ),
                 ),
               ),
               // Gradient overlay
@@ -1520,7 +1829,7 @@ class _PopularCard extends StatelessWidget {
                 right: 10,
                 child: Container(
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: _T.primary,
                     borderRadius: BorderRadius.circular(10),
@@ -1598,7 +1907,8 @@ class _RestaurantCardState extends State<_RestaurantCard> {
         homeKey.currentState?._fetchCart();
       },
       child: Container(
-        margin: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+        margin: const EdgeInsets.fromLTRB(
+            kIsWeb ? 10 : 20, 10, kIsWeb ? 10 : 20, 10),
         decoration: BoxDecoration(
           color: _T.card,
           borderRadius: BorderRadius.circular(22),
@@ -1618,28 +1928,27 @@ class _RestaurantCardState extends State<_RestaurantCard> {
               children: [
                 ClipRRect(
                   borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(22)),
+                      const BorderRadius.vertical(top: Radius.circular(22)),
                   child: CachedNetworkImage(
                     imageUrl: r.image ?? '',
-                    height: kIsWeb ? 450 : 200,
+                    height: 200,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) =>
-                        Container(
-                          height: 155,
-                          color: Colors.grey.shade200,
-                          child: const Center(
-                            child: Icon(Icons.restaurant,
-                                size: 40, color: Colors.grey),
-                          ),
-                        ),
+                    errorWidget: (_, __, ___) => Container(
+                      height: 155,
+                      color: Colors.grey.shade200,
+                      child: const Center(
+                        child: Icon(Icons.restaurant,
+                            size: 40, color: Colors.grey),
+                      ),
+                    ),
                   ),
                 ),
                 // Closed overlay
                 if (r.isAcceptingOrders == false)
                   ClipRRect(
                     borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(22)),
+                        const BorderRadius.vertical(top: Radius.circular(22)),
                     child: Container(
                       height: 155,
                       color: Colors.black.withOpacity(0.58),
@@ -1700,7 +2009,7 @@ class _RestaurantCardState extends State<_RestaurantCard> {
                   left: 10,
                   child: Container(
                     padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                     decoration: BoxDecoration(
                       color: _ratingColor,
                       borderRadius: BorderRadius.circular(10),
@@ -1735,6 +2044,8 @@ class _RestaurantCardState extends State<_RestaurantCard> {
                 children: [
                   Text(
                     r.businessName ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontFamily: _T.font,
                       fontSize: 16,
@@ -1747,7 +2058,7 @@ class _RestaurantCardState extends State<_RestaurantCard> {
                     r.address ?? '',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: _T.font,
                       fontSize: 12,
                       color: _T.muted,
@@ -1772,9 +2083,9 @@ class _RestaurantCardState extends State<_RestaurantCard> {
                             : const Color(0xFF5D4037),
                       ),
                       if (r.isAcceptingOrders == true)
-                        _Chip(Icons.circle, 'Open now', const Color(0xFF2E7D32))
+                        const _Chip(Icons.circle, 'Open now', Color(0xFF2E7D32))
                       else
-                        _Chip(Icons.circle, 'Closed', const Color(0xFFB71C1C)),
+                        const _Chip(Icons.circle, 'Closed', Color(0xFFB71C1C)),
                     ],
                   ),
                 ],
@@ -1808,11 +2119,11 @@ class _Chip extends StatelessWidget {
         children: [
           isStatus
               ? Container(
-            width: 6,
-            height: 6,
-            decoration:
-            BoxDecoration(shape: BoxShape.circle, color: color),
-          )
+                  width: 6,
+                  height: 6,
+                  decoration:
+                      BoxDecoration(shape: BoxShape.circle, color: color),
+                )
               : Icon(icon, color: color, size: 11),
           const SizedBox(width: 4),
           Text(
@@ -1904,10 +2215,7 @@ List<PopularFood> _rankPopularFoods(List<PopularFood> raw) {
     return (price > 0 ? 1 / price : 0) * 0.4 + recency * 0.6;
   }
 
-  final indexed = raw
-      .asMap()
-      .entries
-      .toList();
+  final indexed = raw.asMap().entries.toList();
   indexed
       .sort((a, b) => _score(b.value, b.key).compareTo(_score(a.value, a.key)));
   return indexed.map((e) => e.value).toList();
@@ -1979,11 +2287,10 @@ class PopularFoodSection extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.only(left: 20, right: 8),
             itemCount: ranked.length,
-            itemBuilder: (context, i) =>
-                _PopularFoodCard(
-                  food: ranked[i],
-                  rank: i,
-                ),
+            itemBuilder: (context, i) => _PopularFoodCard(
+              food: ranked[i],
+              rank: i,
+            ),
           ),
         ),
 
@@ -2018,8 +2325,7 @@ class _PopularFoodCardState extends State<_PopularFoodCard>
       duration: const Duration(milliseconds: 140),
       lowerBound: 0.93,
       upperBound: 1.0,
-    )
-      ..value = 1.0;
+    )..value = 1.0;
     _scale = _ctrl;
   }
 
@@ -2087,30 +2393,29 @@ class _PopularFoodCardState extends State<_PopularFoodCard>
                 children: [
                   ClipRRect(
                     borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
+                        const BorderRadius.vertical(top: Radius.circular(20)),
                     child: CachedNetworkImage(
                       imageUrl: f.image ?? '',
                       height: 120,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) =>
-                          Container(
-                            height: 120,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: _grad,
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                Icons.restaurant_menu_rounded,
-                                color: Colors.white.withOpacity(0.8),
-                                size: 36,
-                              ),
-                            ),
+                      errorWidget: (_, __, ___) => Container(
+                        height: 120,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: _grad,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.restaurant_menu_rounded,
+                            color: Colors.white.withOpacity(0.8),
+                            size: 36,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
 
@@ -2397,20 +2702,19 @@ class _CartBottomBarState extends State<CartBottomBar>
                               width: 48,
                               height: 48,
                               fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) =>
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    child: const Icon(
-                                      Icons.storefront_rounded,
-                                      color: Colors.white,
-                                      size: 22,
-                                    ),
-                                  ),
+                              errorWidget: (_, __, ___) => Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Icon(
+                                  Icons.storefront_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              ),
                             ),
                           ),
                           // Count badge
@@ -2463,9 +2767,7 @@ class _CartBottomBarState extends State<CartBottomBar>
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${widget.count} item${widget.count > 1
-                                ? 's'
-                                : ''}  •  ₹${widget.total.toStringAsFixed(0)}',
+                            '${widget.count} item${widget.count > 1 ? 's' : ''}  •  ₹${widget.total.toStringAsFixed(0)}',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.8),
                               fontSize: 11,
@@ -2544,3 +2846,497 @@ class _CartBottomBarState extends State<CartBottomBar>
     );
   }
 }
+
+enum UpdateType { force, normal }
+
+// ─────────────────────────────────────────────
+//  Update Dialog Widget
+// ─────────────────────────────────────────────
+class UpdateDialog extends StatelessWidget {
+  final UpdateType type;
+  final String currentVersion;
+  final String newVersion;
+  final String? releaseNotes;
+  final VoidCallback onUpdate;
+  final VoidCallback? onSkip; // only used for normal update
+
+  const UpdateDialog({
+    super.key,
+    required this.type,
+    required this.currentVersion,
+    required this.newVersion,
+    this.releaseNotes,
+    required this.onUpdate,
+    this.onSkip,
+  });
+
+  bool get isForce => type == UpdateType.force;
+
+  // ── Chakra accent per update type ──────────
+  Color get _accentColor => isForce ? Colors.red : K.gold;
+
+  Color get _glowColor =>
+      isForce ? Colors.red.withOpacity(0.18) : Colors.amber.withOpacity(0.12);
+
+  // ── Icon per update type ───────────────────
+  IconData get _icon =>
+      isForce ? Icons.system_update_alt_rounded : Icons.update_rounded;
+
+  String get _title => isForce ? 'Update Required' : 'Update Available';
+
+  String get _subtitle => isForce
+      ? 'This version is no longer supported. Please update to continue.'
+      : 'A new version is ready. Update now for the latest improvements.';
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      // Prevent back-dismiss on force update
+      canPop: !isForce,
+      child: Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+        child: _DialogCard(
+          accentColor: _accentColor,
+          glowColor: _glowColor,
+          icon: _icon,
+          title: _title,
+          subtitle: _subtitle,
+          currentVersion: currentVersion,
+          newVersion: newVersion,
+          releaseNotes: releaseNotes,
+          isForce: isForce,
+          onUpdate: onUpdate,
+          onSkip: onSkip,
+        ),
+      ),
+    );
+  }
+
+  // ── Convenience static show methods ────────
+  static Future<void> show({
+    required BuildContext context,
+    required UpdateType type,
+    required String currentVersion,
+    required String newVersion,
+    String? releaseNotes,
+    required VoidCallback onUpdate,
+    VoidCallback? onSkip,
+  }) {
+    return showDialog(
+      context: context,
+      barrierDismissible: type == UpdateType.normal,
+      barrierColor: Colors.black.withOpacity(0.72),
+      builder: (_) => UpdateDialog(
+        type: type,
+        currentVersion: currentVersion,
+        newVersion: newVersion,
+        releaseNotes: releaseNotes,
+        onUpdate: onUpdate,
+        onSkip: onSkip,
+      ),
+    );
+  }
+}
+
+class _DialogCard extends StatelessWidget {
+  final Color accentColor;
+  final Color glowColor;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String currentVersion;
+  final String newVersion;
+  final String? releaseNotes;
+  final bool isForce;
+  final VoidCallback onUpdate;
+  final VoidCallback? onSkip;
+
+  const _DialogCard({
+    required this.accentColor,
+    required this.glowColor,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.currentVersion,
+    required this.newVersion,
+    this.releaseNotes,
+    required this.isForce,
+    required this.onUpdate,
+    this.onSkip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: K.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: accentColor.withOpacity(0.35), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: glowColor,
+            blurRadius: 48,
+            spreadRadius: 4,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.6),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Accent top bar ───────────────
+            Container(
+              height: 3,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    accentColor,
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: EdgeInsets.all(K.sp(3)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── Icon ──────────────────
+                  _IconBadge(icon: icon, accentColor: accentColor),
+                  SizedBox(height: K.sp(2)),
+
+                  // ── Title ─────────────────
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: K.ink,
+                      letterSpacing: 0.2,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: K.sp(1)),
+
+                  // ── Subtitle ──────────────
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: K.muted,
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: K.sp(2.5)),
+
+                  // ── Version pill row ──────
+                  _VersionRow(
+                    currentVersion: currentVersion,
+                    newVersion: newVersion,
+                    accentColor: accentColor,
+                  ),
+
+                  // ── Release notes ─────────
+                  if (releaseNotes != null) ...[
+                    SizedBox(height: K.sp(2)),
+                    _ReleaseNotes(notes: releaseNotes!),
+                  ],
+
+                  SizedBox(height: K.sp(3)),
+
+                  // ── Actions ───────────────
+                  _Actions(
+                    isForce: isForce,
+                    accentColor: accentColor,
+                    onUpdate: onUpdate,
+                    onSkip: onSkip,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class K {
+  static double sp(double n) => 8 * n;
+  static const bg = Color(0xFF0B0712); // near-black royal purple
+  static const surface = Color(0xFF120A21);
+  static const ink = Color(0xFFF2EEF9);
+  static const panel = Color(0x22120A21);
+
+  static const muted = Color(0xFFA69ABF);
+  static const gold = Color(0xFFD7B45E);
+  static const goldInk = Color(0xFF0B0712);
+  static const edge = Color(0x14FFFFFF); // 8% white
+
+  // Chakra
+  static const red = Color(0xFFE53935);
+  static const orange = Color(0xFFFB8C00);
+  static const yellow = Color(0xFFFDD835);
+  static const green = Color(0xFF43A047);
+  static const blue = Color(0xFF1E88E5);
+  static const indigo = Color(0xFF5E35B1);
+  static const violet = Color(0xFFB39DDB);
+}
+
+class _ReleaseNotes extends StatelessWidget {
+  final String notes;
+
+  const _ReleaseNotes({required this.notes});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(K.sp(1.5)),
+      decoration: BoxDecoration(
+        color: K.panel,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: K.edge),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome_rounded, color: K.violet, size: 13),
+              SizedBox(width: K.sp(0.5)),
+              const Text(
+                "What's new",
+                style: TextStyle(
+                  fontSize: 11,
+                  color: K.violet,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: K.sp(0.75)),
+          Text(
+            notes,
+            style: const TextStyle(
+              fontSize: 12,
+              color: K.muted,
+              height: 1.6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Action Buttons
+// ─────────────────────────────────────────────
+class _Actions extends StatelessWidget {
+  final bool isForce;
+  final Color accentColor;
+  final VoidCallback onUpdate;
+  final VoidCallback? onSkip;
+
+  const _Actions({
+    required this.isForce,
+    required this.accentColor,
+    required this.onUpdate,
+    this.onSkip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // ── Primary: Update ──────────────────
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                colors: [
+                  accentColor,
+                  accentColor.withOpacity(0.75),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: accentColor.withOpacity(0.35),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: onUpdate,
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: Text(
+                isForce ? 'Update Now' : 'Update',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: isForce ? K.ink : K.goldInk,
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // ── Secondary: Skip (normal only) ────
+        if (!isForce) ...[
+          SizedBox(height: K.sp(1)),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: TextButton(
+              style: TextButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: K.edge),
+                ),
+              ),
+              onPressed: onSkip ?? () => Navigator.of(context).pop(),
+              child: const Text(
+                'Maybe Later',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: K.muted,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _IconBadge extends StatelessWidget {
+  final IconData icon;
+  final Color accentColor;
+
+  const _IconBadge({required this.icon, required this.accentColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: accentColor.withOpacity(0.12),
+        border: Border.all(color: accentColor.withOpacity(0.3), width: 1.5),
+      ),
+      child: Icon(icon, color: accentColor, size: 30),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Version Row
+// ─────────────────────────────────────────────
+class _VersionRow extends StatelessWidget {
+  final String currentVersion;
+  final String newVersion;
+  final Color accentColor;
+
+  const _VersionRow({
+    required this.currentVersion,
+    required this.newVersion,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: K.sp(2),
+        vertical: K.sp(1.5),
+      ),
+      decoration: BoxDecoration(
+        color: K.bg.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: K.edge),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _VersionPill(
+              label: 'Current', version: currentVersion, color: K.muted),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: K.sp(1.5)),
+            child: Icon(
+              Icons.arrow_forward_rounded,
+              color: accentColor,
+              size: 18,
+            ),
+          ),
+          _VersionPill(label: 'New', version: newVersion, color: accentColor),
+        ],
+      ),
+    );
+  }
+}
+
+class _VersionPill extends StatelessWidget {
+  final String label;
+  final String version;
+  final Color color;
+
+  const _VersionPill({
+    required this.label,
+    required this.version,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style:
+              const TextStyle(fontSize: 10, color: K.muted, letterSpacing: 0.8),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          version,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Release Notes
+// ─────────────────────────────────────────────
