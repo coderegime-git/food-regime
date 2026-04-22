@@ -165,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Future<void> _init() async {
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
-              _scrollController.position.maxScrollExtent - 200 &&
+          _scrollController.position.maxScrollExtent - 200 &&
           !isLoadingMore &&
           hasNextPage) {
         loadMoreRestaurants();
@@ -299,7 +299,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Widget _animate(int i, Widget child) => FadeTransition(
+  Widget _animate(int i, Widget child) =>
+      FadeTransition(
         opacity: _fadeAnims[i],
         child: SlideTransition(position: _slideAnims[i], child: child),
       );
@@ -322,6 +323,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     } else {
       if (mounted) context.push(AppRoutes.loginPath(true));
     }
+    //
   }
 
   Widget _pRestaurantCard(Restaurant restaurant) {
@@ -512,10 +514,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: Container(
                   decoration: BoxDecoration(
                       gradient: LinearGradient(colors: [
-                    Colors.deepOrange.shade200,
-                    Colors.yellow.shade100,
-                    Colors.white,
-                  ])),
+                        Colors.deepOrange.shade200,
+                        Colors.yellow.shade100,
+                        Colors.white,
+                      ])),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -538,7 +540,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           itemCount: homeData.data!.popularRestaurants!.length,
                           gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
+                          const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2, // 2 rows
                             crossAxisSpacing: 10,
                             mainAxisSpacing: kIsWeb ? 20 : 15,
@@ -571,143 +573,145 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               if (homeData.restaurants?.results != null)
                 kIsWeb
                     ? SliverGrid(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, i) {
-                            if (_filteredRestaurants.isEmpty) {
-                              SliverToBoxAdapter(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 60, horizontal: 32),
-                                  child: Column(
-                                    children: [
-                                      Icon(Icons.search_off_rounded,
-                                          size: 56,
-                                          color: Colors.grey.shade300),
-                                      const SizedBox(height: 16),
-                                      const Text(
-                                        'No restaurants match your filters',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF1C1C1E),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      GestureDetector(
-                                        onTap: () => setState(() =>
-                                            _filterState = const FilterState()),
-                                        child: const Text(
-                                          'Clear filters',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFFE23744),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                  delegate: SliverChildBuilderDelegate(
+                        (context, i) {
+                      if (_filteredRestaurants.isEmpty) {
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 60, horizontal: 32),
+                            child: Column(
+                              children: [
+                                Icon(Icons.search_off_rounded,
+                                    size: 56,
+                                    color: Colors.grey.shade300),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'No restaurants match your filters',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF1C1C1E),
                                   ),
                                 ),
-                              );
-                            }
-
-                            if (i >= _filteredRestaurants.length) {
-                              return const Center(
-                                child: AppDefaultLoader(
-                                  color: _T.primary,
-                                  loading: true,
-                                ),
-                              );
-                            }
-                            return _RestaurantCard(r: _filteredRestaurants[i]);
-                          },
-                          childCount: _filteredRestaurants.length,
-                        ),
-                        gridDelegate:
-                            const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 420,
-                          mainAxisSpacing: 20,
-                          crossAxisSpacing: 0,
-                          childAspectRatio: 1.1,
-                        ),
-                      )
-                    : _filteredRestaurants.isEmpty
-                        ? SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 60, horizontal: 32),
-                              child: Column(
-                                children: [
-                                  Icon(Icons.search_off_rounded,
-                                      size: 56, color: Colors.grey.shade300),
-                                  const SizedBox(height: 16),
-                                  const Text(
-                                    'No restaurants match your filters',
-                                    textAlign: TextAlign.center,
+                                const SizedBox(height: 8),
+                                GestureDetector(
+                                  onTap: () =>
+                                      setState(() =>
+                                      _filterState = const FilterState()),
+                                  child: const Text(
+                                    'Clear filters',
                                     style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF1C1C1E),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFFE23744),
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
-                                  GestureDetector(
-                                    onTap: () => setState(() =>
-                                        _filterState = const FilterState()),
-                                    child: const Text(
-                                      'Clear filters',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFFE23744),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (_, i) {
-                                print(_filteredRestaurants);
-                                print("_filteredRestaurants");
-
-                                if (i == 4) {
-                                  return Column(
-                                    children: [
-                                      const SizedBox(height: 10),
-                                      _PopularSection(
-                                          homeData.data!.popularFoods!),
-                                      const SizedBox(height: 10),
-                                    ],
-                                  );
-                                }
-
-                                final index = i > 4 ? i - 1 : i;
-                                if (index >= _filteredRestaurants.length) {
-                                  return const Padding(
-                                    padding: EdgeInsets.all(20),
-                                    child: Center(
-                                      child: AppDefaultLoader(
-                                        color: _T.primary,
-                                        loading: true,
-                                      ),
-                                    ),
-                                  );
-                                }
-                                return _animate(
-                                  4,
-                                  _RestaurantCard(
-                                      r: _filteredRestaurants[index]),
-                                );
-                              },
-                              childCount: _filteredRestaurants.length >= 3
-                                  ? _filteredRestaurants.length + 1
-                                  : _filteredRestaurants.length,
+                                ),
+                              ],
                             ),
                           ),
+                        );
+                      }
+
+                      if (i >= _filteredRestaurants.length) {
+                        return const Center(
+                          child: AppDefaultLoader(
+                            color: _T.primary,
+                            loading: true,
+                          ),
+                        );
+                      }
+                      return _RestaurantCard(r: _filteredRestaurants[i]);
+                    },
+                    childCount: _filteredRestaurants.length,
+                  ),
+                  gridDelegate:
+                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 420,
+                    mainAxisSpacing: 20,
+                    crossAxisSpacing: 0,
+                    childAspectRatio: 1.1,
+                  ),
+                )
+                    : _filteredRestaurants.isEmpty
+                    ? SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 60, horizontal: 32),
+                    child: Column(
+                      children: [
+                        Icon(Icons.search_off_rounded,
+                            size: 56, color: Colors.grey.shade300),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No restaurants match your filters',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1C1C1E),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: () =>
+                              setState(() =>
+                              _filterState = const FilterState()),
+                          child: const Text(
+                            'Clear filters',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFE23744),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+                    : SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                        (_, i) {
+                      print(_filteredRestaurants);
+                      print("_filteredRestaurants");
+
+                      if (i == 4) {
+                        return Column(
+                          children: [
+                            const SizedBox(height: 10),
+                            _PopularSection(
+                                homeData.data!.popularFoods!),
+                            const SizedBox(height: 10),
+                          ],
+                        );
+                      }
+
+                      final index = i > 4 ? i - 1 : i;
+                      if (index >= _filteredRestaurants.length) {
+                        return const Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Center(
+                            child: AppDefaultLoader(
+                              color: _T.primary,
+                              loading: true,
+                            ),
+                          ),
+                        );
+                      }
+                      return _animate(
+                        4,
+                        _RestaurantCard(
+                            r: _filteredRestaurants[index]),
+                      );
+                    },
+                    childCount: _filteredRestaurants.length >= 3
+                        ? _filteredRestaurants.length + 1
+                        : _filteredRestaurants.length,
+                  ),
+                ),
               // SliverToBoxAdapter(
               //   child: PopularRestaurantsScreen(
               //       restaurants: homeData.data!.popularRestaurants ?? []),
@@ -716,19 +720,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               SliverToBoxAdapter(
                 child: isLoadingMore
                     ? Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Center(
-                                child: AppDefaultLoader(
-                              loading: isLoadingMore,
-                            )),
-                          ),
-                          const SizedBox(
-                            height: 120,
-                          )
-                        ],
-                      )
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Center(
+                          child: AppDefaultLoader(
+                            loading: isLoadingMore,
+                          )),
+                    ),
+                    const SizedBox(
+                      height: 120,
+                    )
+                  ],
+                )
                     : const SizedBox(),
               ),
               if (!isLoadingMore)
@@ -842,7 +846,8 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
     _bgAc = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 8),
-    )..repeat();
+    )
+      ..repeat();
     _pageCtrl = PageController();
 
     // Auto-scroll banners
@@ -871,10 +876,19 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final top = MediaQuery.of(context).padding.top;
+    final top = MediaQuery
+        .of(context)
+        .padding
+        .top;
     final h = kIsWeb
-        ? MediaQuery.of(context).size.height * 0.7
-        : MediaQuery.of(context).size.height * 0.52;
+        ? MediaQuery
+        .of(context)
+        .size
+        .height * 0.7
+        : MediaQuery
+        .of(context)
+        .size
+        .height * 0.52;
 
     return SizedBox(
       height: h + 24,
@@ -939,18 +953,19 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
                     math.max(widget.coupons.length, 1),
-                    (i) => AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      width: _currentPage == i ? 22 : 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: _currentPage == i
-                            ? Colors.white
-                            : Colors.white.withOpacity(0.35),
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
+                        (i) =>
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: _currentPage == i ? 22 : 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: _currentPage == i
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.35),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -998,7 +1013,7 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
                                 Flexible(
                                   child: Text(
                                     widget.profileData?.data?.defaultAddress
-                                            ?.fullAddress ??
+                                        ?.fullAddress ??
                                         'Select address',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -1021,7 +1036,7 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
                         GestureDetector(
                           onTap: () {
                             String? token =
-                                SharedPreferenceHelper.getAuthToken();
+                            SharedPreferenceHelper.getAuthToken();
                             if (token != null && token.isNotEmpty) {
                               context.push(AppRoutes.notifications);
                             } else {
@@ -1040,7 +1055,7 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
                         GestureDetector(
                             onTap: () {
                               String? token =
-                                  SharedPreferenceHelper.getAuthToken();
+                              SharedPreferenceHelper.getAuthToken();
                               if (token != null && token.isNotEmpty) {
                                 context.push(AppRoutes.editProfile);
                                 widget.profileData =
@@ -1053,7 +1068,7 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
                               }
                             },
                             child:
-                                _AvatarPill(profileData: widget.profileData)),
+                            _AvatarPill(profileData: widget.profileData)),
                       ],
                     ),
                   ),
@@ -1161,7 +1176,10 @@ class _AnimatedFoodGifState extends State<_AnimatedFoodGif> {
       return const SizedBox(width: 170, height: 170);
     }
     if (kIsWeb) {
-      double h = MediaQuery.of(context).size.height * (kIsWeb ? 0.6 : 0.25);
+      double h = MediaQuery
+          .of(context)
+          .size
+          .height * (kIsWeb ? 0.6 : 0.25);
 
       return SizedBox(
         width: double.infinity,
@@ -1172,14 +1190,14 @@ class _AnimatedFoodGifState extends State<_AnimatedFoodGif> {
             alignment: Alignment.center,
             child: widget.gifUrls[widget.pageIndex].contains(".mp4")
                 ? SizedBox(
-                    width: _controller.value.size.width,
-                    height: _controller.value.size.height,
-                    child: VideoPlayer(_controller),
-                  )
+              width: _controller.value.size.width,
+              height: _controller.value.size.height,
+              child: VideoPlayer(_controller),
+            )
                 : Image.asset(
-                    widget.gifUrls[widget.pageIndex],
-                    fit: BoxFit.cover,
-                  ),
+              widget.gifUrls[widget.pageIndex],
+              fit: BoxFit.cover,
+            ),
           ),
         ),
       );
@@ -1343,9 +1361,10 @@ class _HeroSearch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.push(
-        AppRoutes.searchScreen,
-      ),
+      onTap: () =>
+          context.push(
+            AppRoutes.searchScreen,
+          ),
       child: Container(
         height: 48,
         decoration: BoxDecoration(
@@ -1411,7 +1430,7 @@ class _IconPill extends StatelessWidget {
             color: Colors.white.withOpacity(0.15),
             borderRadius: BorderRadius.circular(12),
             border:
-                Border.all(color: Colors.white.withOpacity(0.25), width: 1.2),
+            Border.all(color: Colors.white.withOpacity(0.25), width: 1.2),
           ),
           child: Icon(icon, color: Colors.white, size: 19),
         ),
@@ -1573,11 +1592,10 @@ class _CategoriesRow extends StatelessWidget {
   final ValueChanged<int> onSelect;
   final ValueChanged<FilterState> onFilterChange;
 
-  const _CategoriesRow(
-      {required this.selected,
-      required this.onSelect,
-      required this.onFilterChange,
-      required this.filterState});
+  const _CategoriesRow({required this.selected,
+    required this.onSelect,
+    required this.onFilterChange,
+    required this.filterState});
 
   @override
   Widget build(BuildContext context) {
@@ -1602,17 +1620,18 @@ class _CategoriesRow extends StatelessWidget {
                   // ← allows the sheet to be taller
                   shape: const RoundedRectangleBorder(
                     borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(24)),
+                    BorderRadius.vertical(top: Radius.circular(24)),
                   ),
-                  builder: (_) => SafeArea(
-                    child: CategoryFilterBar(
-                      categories: AppConstants.categories ?? [],
-                      filterState: filterState,
-                      onFilterChanged: (newState) {
-                        onFilterChange(newState);
-                      },
-                    ),
-                  ),
+                  builder: (_) =>
+                      SafeArea(
+                        child: CategoryFilterBar(
+                          categories: AppConstants.categories ?? [],
+                          filterState: filterState,
+                          onFilterChanged: (newState) {
+                            onFilterChange(newState);
+                          },
+                        ),
+                      ),
                 );
               },
               child: Stack(
@@ -1666,9 +1685,9 @@ class _CategoriesRow extends StatelessWidget {
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeOutCubic,
                   margin:
-                      const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+                  const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     color: sel ? _T.primary : _T.card,
                     borderRadius: BorderRadius.circular(15),
@@ -1678,19 +1697,19 @@ class _CategoriesRow extends StatelessWidget {
                     ),
                     boxShadow: sel
                         ? [
-                            BoxShadow(
-                              color: _T.primary.withOpacity(0.38),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            )
-                          ]
+                      BoxShadow(
+                        color: _T.primary.withOpacity(0.38),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      )
+                    ]
                         : [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            )
-                          ],
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -1706,7 +1725,7 @@ class _CategoriesRow extends StatelessWidget {
                             : null,
                         child: (data.image?.isEmpty != false)
                             ? Icon(Icons.fastfood,
-                                size: 14, color: sel ? Colors.white : _T.muted)
+                            size: 14, color: sel ? Colors.white : _T.muted)
                             : null,
                       ),
                       const SizedBox(height: 5),
@@ -1722,7 +1741,7 @@ class _CategoriesRow extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             fontWeight: FontWeight.w600,
                             color:
-                                sel ? Colors.white : _T.ink.withOpacity(0.65),
+                            sel ? Colors.white : _T.ink.withOpacity(0.65),
                           ),
                         ),
                       ),
@@ -1826,12 +1845,13 @@ class _PopularCard extends StatelessWidget {
                 child: CachedNetworkImage(
                   imageUrl: p.image ?? '',
                   fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) => Container(
-                    color: accent,
-                    child: const Center(
-                      child: Text('🍽️', style: TextStyle(fontSize: 40)),
-                    ),
-                  ),
+                  errorWidget: (_, __, ___) =>
+                      Container(
+                        color: accent,
+                        child: const Center(
+                          child: Text('🍽️', style: TextStyle(fontSize: 40)),
+                        ),
+                      ),
                 ),
               ),
               // Gradient overlay
@@ -1856,7 +1876,7 @@ class _PopularCard extends StatelessWidget {
                 right: 10,
                 child: Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: _T.primary,
                     borderRadius: BorderRadius.circular(10),
@@ -1955,27 +1975,28 @@ class _RestaurantCardState extends State<_RestaurantCard> {
               children: [
                 ClipRRect(
                   borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(22)),
+                  const BorderRadius.vertical(top: Radius.circular(22)),
                   child: CachedNetworkImage(
                     imageUrl: r.image ?? '',
                     height: 200,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => Container(
-                      height: 155,
-                      color: Colors.grey.shade200,
-                      child: const Center(
-                        child: Icon(Icons.restaurant,
-                            size: 40, color: Colors.grey),
-                      ),
-                    ),
+                    errorWidget: (_, __, ___) =>
+                        Container(
+                          height: 155,
+                          color: Colors.grey.shade200,
+                          child: const Center(
+                            child: Icon(Icons.restaurant,
+                                size: 40, color: Colors.grey),
+                          ),
+                        ),
                   ),
                 ),
                 // Closed overlay
                 if (r.isAcceptingOrders == false)
                   ClipRRect(
                     borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(22)),
+                    const BorderRadius.vertical(top: Radius.circular(22)),
                     child: Container(
                       height: 155,
                       color: Colors.black.withOpacity(0.58),
@@ -2036,7 +2057,7 @@ class _RestaurantCardState extends State<_RestaurantCard> {
                   left: 10,
                   child: Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                     decoration: BoxDecoration(
                       color: _ratingColor,
                       borderRadius: BorderRadius.circular(10),
@@ -2146,11 +2167,11 @@ class _Chip extends StatelessWidget {
         children: [
           isStatus
               ? Container(
-                  width: 6,
-                  height: 6,
-                  decoration:
-                      BoxDecoration(shape: BoxShape.circle, color: color),
-                )
+            width: 6,
+            height: 6,
+            decoration:
+            BoxDecoration(shape: BoxShape.circle, color: color),
+          )
               : Icon(icon, color: color, size: 11),
           const SizedBox(width: 4),
           Text(
@@ -2242,7 +2263,10 @@ List<PopularFood> _rankPopularFoods(List<PopularFood> raw) {
     return (price > 0 ? 1 / price : 0) * 0.4 + recency * 0.6;
   }
 
-  final indexed = raw.asMap().entries.toList();
+  final indexed = raw
+      .asMap()
+      .entries
+      .toList();
   indexed
       .sort((a, b) => _score(b.value, b.key).compareTo(_score(a.value, a.key)));
   return indexed.map((e) => e.value).toList();
@@ -2314,10 +2338,11 @@ class PopularFoodSection extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.only(left: 20, right: 8),
             itemCount: ranked.length,
-            itemBuilder: (context, i) => _PopularFoodCard(
-              food: ranked[i],
-              rank: i,
-            ),
+            itemBuilder: (context, i) =>
+                _PopularFoodCard(
+                  food: ranked[i],
+                  rank: i,
+                ),
           ),
         ),
 
@@ -2352,7 +2377,8 @@ class _PopularFoodCardState extends State<_PopularFoodCard>
       duration: const Duration(milliseconds: 140),
       lowerBound: 0.93,
       upperBound: 1.0,
-    )..value = 1.0;
+    )
+      ..value = 1.0;
     _scale = _ctrl;
   }
 
@@ -2420,29 +2446,30 @@ class _PopularFoodCardState extends State<_PopularFoodCard>
                 children: [
                   ClipRRect(
                     borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(20)),
+                    const BorderRadius.vertical(top: Radius.circular(20)),
                     child: CachedNetworkImage(
                       imageUrl: f.image ?? '',
                       height: 120,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) => Container(
-                        height: 120,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: _grad,
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                      errorWidget: (_, __, ___) =>
+                          Container(
+                            height: 120,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: _grad,
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.restaurant_menu_rounded,
+                                color: Colors.white.withOpacity(0.8),
+                                size: 36,
+                              ),
+                            ),
                           ),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            Icons.restaurant_menu_rounded,
-                            color: Colors.white.withOpacity(0.8),
-                            size: 36,
-                          ),
-                        ),
-                      ),
                     ),
                   ),
 
@@ -2729,19 +2756,20 @@ class _CartBottomBarState extends State<CartBottomBar>
                               width: 48,
                               height: 48,
                               fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) => Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: const Icon(
-                                  Icons.storefront_rounded,
-                                  color: Colors.white,
-                                  size: 22,
-                                ),
-                              ),
+                              errorWidget: (_, __, ___) =>
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: const Icon(
+                                      Icons.storefront_rounded,
+                                      color: Colors.white,
+                                      size: 22,
+                                    ),
+                                  ),
                             ),
                           ),
                           // Count badge
@@ -2794,7 +2822,9 @@ class _CartBottomBarState extends State<CartBottomBar>
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${widget.count} item${widget.count > 1 ? 's' : ''}  •  ₹${widget.total.toStringAsFixed(0)}',
+                            '${widget.count} item${widget.count > 1
+                                ? 's'
+                                : ''}  •  ₹${widget.total.toStringAsFixed(0)}',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.8),
                               fontSize: 11,
@@ -2911,9 +2941,10 @@ class UpdateDialog extends StatelessWidget {
 
   String get _title => isForce ? 'Update Required' : 'Update Available';
 
-  String get _subtitle => isForce
-      ? 'This version is no longer supported. Please update to continue.'
-      : 'A new version is ready. Update now for the latest improvements.';
+  String get _subtitle =>
+      isForce
+          ? 'This version is no longer supported. Please update to continue.'
+          : 'A new version is ready. Update now for the latest improvements.';
 
   @override
   Widget build(BuildContext context) {
@@ -2954,14 +2985,15 @@ class UpdateDialog extends StatelessWidget {
       context: context,
       barrierDismissible: type == UpdateType.normal,
       barrierColor: Colors.black.withOpacity(0.72),
-      builder: (_) => UpdateDialog(
-        type: type,
-        currentVersion: currentVersion,
-        newVersion: newVersion,
-        releaseNotes: releaseNotes,
-        onUpdate: onUpdate,
-        onSkip: onSkip,
-      ),
+      builder: (_) =>
+          UpdateDialog(
+            type: type,
+            currentVersion: currentVersion,
+            newVersion: newVersion,
+            releaseNotes: releaseNotes,
+            onUpdate: onUpdate,
+            onSkip: onSkip,
+          ),
     );
   }
 }
@@ -3348,7 +3380,7 @@ class _VersionPill extends StatelessWidget {
         Text(
           label,
           style:
-              const TextStyle(fontSize: 10, color: K.muted, letterSpacing: 0.8),
+          const TextStyle(fontSize: 10, color: K.muted, letterSpacing: 0.8),
         ),
         const SizedBox(height: 2),
         Text(
