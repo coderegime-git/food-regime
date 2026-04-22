@@ -15,7 +15,7 @@ class AppRoutes {
   // ─── Auth ──────────────────────────────────────────────────────────────────
   static const String splash = '/';
   static const String onboarding = '/onboarding';
-  static const String login = '/auth/login';
+  static const String login = '/auth/login:/isGuest';
   static const String register = '/auth/register';
   static const String forgotPassword = '/auth/forgot-password';
   static const String otp = '/auth/otp';
@@ -73,6 +73,8 @@ class AppRoutes {
   static String editProfilePath(String fromHome) => '/profile/edit/$fromHome';
 
   static String staticPagePath(String page) => '/profile/help/$page';
+
+  static String loginPath(bool isGuest) => '/auth/login/$isGuest';
 }
 
 /// The app's [GoRouter] configuration.
@@ -123,9 +125,14 @@ class AppRouter {
 
       // ── Auth Routes ────────────────────────────────────────────────────────
       GoRoute(
-        path: AppRoutes.login,
+        path: '/auth/login/:isGuest', // <-- :isGuest is the path parameter
         name: 'login',
-        builder: (context, state) => const LoginScreen(),
+        builder: (context, state) {
+          final isGuestString = state.pathParameters['isGuest'] ?? 'false';
+          final isGuest = isGuestString.toLowerCase() == 'true';
+
+          return LoginScreen(isGuest: isGuest);
+        },
       ),
       GoRoute(
         path: AppRoutes.register,
@@ -175,6 +182,7 @@ class AppRouter {
           //   name: 'cart',
           //   builder: (context, state) => const CartScreen(),
           // ),
+
           GoRoute(
             path: AppRoutes.orders,
             name: 'orders',

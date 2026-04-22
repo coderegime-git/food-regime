@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:food_delivery_app/theme/app_colors.dart';
 import 'package:food_delivery_app/utils/api_service.dart';
 import 'package:food_delivery_app/widgets/app_loader.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../constants/app_constants.dart';
 import '../../model/cart_data.dart';
 import '../../model/home_data.dart' show Coupon;
 import '../../model/restauant_detail_data.dart';
+import '../../routes/app_routes.dart';
 import '../../utils/helper.dart';
+import '../../utils/sharedpreference_helper.dart';
 import '../../widgets/empty_card.dart';
 import '../order/confirm_order_screen.dart';
 import 'main_shell.dart';
@@ -51,15 +54,18 @@ class _RestaurantDetailPageState extends State<RestaurantDetailScreen> {
   }
 
   Future<void> _fetchCart() async {
-    try {
-      final res = await apiService.getCart();
-      setState(() => _cartData = res);
-      if (_cartData != null) {
-        _totalCartPrice = _cartData!.itemsTotal ?? 0;
-        totalCartCount = _cartData!.items!.length;
+    String? token = SharedPreferenceHelper.getAuthToken();
+    if (token != null && token.isNotEmpty) {
+      try {
+        final res = await apiService.getCart();
+        setState(() => _cartData = res);
+        if (_cartData != null) {
+          _totalCartPrice = _cartData!.itemsTotal ?? 0;
+          totalCartCount = _cartData!.items!.length;
+        }
+      } catch (e) {
+        debugPrint('getCart error: $e');
       }
-    } catch (e) {
-      debugPrint('getCart error: $e');
     }
   }
 
@@ -97,57 +103,64 @@ class _RestaurantDetailPageState extends State<RestaurantDetailScreen> {
 
   Future<void> _addToCart(MenuItem item) async {
     if (_isLoading) return;
+    String? token = SharedPreferenceHelper.getAuthToken();
+    if (token != null && token.isNotEmpty) {
+      try {
+        final cartRestaurantId = _cartData?.restaurantId?.toString();
 
-    try {
-      final cartRestaurantId = _cartData?.restaurantId?.toString();
-
-      // 🟡 Different restaurant → ask confirmation
-      if (cartRestaurantId != null && cartRestaurantId != widget.restaurantId) {
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text("Replace Cart"),
-              content: const Text(
-                "Your cart contains items from another restaurant. Do you want to clear the cart and add this item?",
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text("No"),
+        // 🟡 Different restaurant → ask confirmation
+        if (cartRestaurantId != null &&
+            cartRestaurantId != widget.restaurantId) {
+          final confirm = await showDialog<bool>(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text("Replace Cart"),
+                content: const Text(
+                  "Your cart contains items from another restaurant. Do you want to clear the cart and add this item?",
                 ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text("Yes"),
-                ),
-              ],
-            );
-          },
-        );
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text("No"),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text("Yes"),
+                  ),
+                ],
+              );
+            },
+          );
 
-        // ❌ User cancelled
-        if (confirm != true) return;
+          // ❌ User cancelled
+          if (confirm != true) return;
 
+          setState(() => _isLoading = true);
+
+          // 👉 Clear cart first
+          await apiService.removeAllCart();
+        }
+
+        // 🟢 Add to cart (for all valid cases)
         setState(() => _isLoading = true);
 
-        // 👉 Clear cart first
-        await apiService.removeAllCart();
+        await apiService.addCart(
+          menuItemId: item.id,
+          quantity: 1,
+        );
+
+        await _fetchCart();
+        await mainShellKey.currentState?.fetchCart();
+      } catch (e) {
+        print("Add to cart error: $e");
+      } finally {
+        setState(() => _isLoading = false);
       }
-
-      // 🟢 Add to cart (for all valid cases)
-      setState(() => _isLoading = true);
-
-      await apiService.addCart(
-        menuItemId: item.id,
-        quantity: 1,
-      );
-
-      await _fetchCart();
-      await mainShellKey.currentState?.fetchCart();
-    } catch (e) {
-      print("Add to cart error: $e");
-    } finally {
-      setState(() => _isLoading = false);
+    } else {
+      if (mounted) {
+        context.push(AppRoutes.loginPath(true));
+      }
     }
   }
 

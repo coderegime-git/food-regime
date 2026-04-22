@@ -47,7 +47,7 @@ class _SplashScreenState extends State<SplashScreen>
       SharedPreferenceHelper.setUserObject(data);
       if (mounted) context.go(AppRoutes.home);
     } else {
-      if (mounted) context.go(AppRoutes.login);
+      if (mounted) context.go(AppRoutes.loginPath(false));
     }
   }
 

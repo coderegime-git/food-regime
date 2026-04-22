@@ -14,7 +14,9 @@ import '../../constants/asset_constants.dart';
 import '../../widgets/common_textform_field.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  bool? isGuest;
+
+  LoginScreen({super.key, this.isGuest = false});
 
   @override
   State<LoginScreen> createState() => _PhoneEntryState();
@@ -86,149 +88,204 @@ class _PhoneEntryState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     final pad = MediaQuery.of(context).padding;
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      backgroundColor: _C.bg,
-      body: Form(
-        key: phoneNumberForm,
-        child: Stack(children: [
-          const _BgArt(),
-          SafeArea(
-            top: false,
-            child: FadeTransition(
-              opacity: _fade,
-              child: SlideTransition(
-                position: _slide,
-                child: Form(
-                  key: _formKey,
-                  child: ListView(
-                    children: [
-                      Center(
-                          child: Image.asset(
-                        AssetConstants.loginScreen,
-                        fit: BoxFit.cover,
-                        height: 400,
-                        width: double.infinity,
-                      )),
-
-                      //      _BackBtn(onTap: () => Navigator.maybePop(context)),
-
-                      // Illustration
-
-                      // Heading
-
-                      // Heading
-                      Container(
-                        padding: const EdgeInsets.all(15),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+    return WillPopScope(
+      onWillPop: () async {
+        if (widget.isGuest == false) {
+          return true;
+        } else {
+          Navigator.of(context).pop();
+        }
+        return false;
+      },
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        backgroundColor: _C.bg,
+        body: Form(
+          key: phoneNumberForm,
+          child: Stack(children: [
+            const _BgArt(),
+            SafeArea(
+              top: false,
+              child: FadeTransition(
+                opacity: _fade,
+                child: SlideTransition(
+                  position: _slide,
+                  child: Form(
+                    key: _formKey,
+                    child: ListView(
+                      children: [
+                        Stack(
                           children: [
-                            const Text('Enter your\nphone number',
-                                style: TextStyle(
-                                  fontFamily: _C.font,
-                                  fontSize: 25,
-                                  fontWeight: FontWeight.w800,
-                                  color: _C.ink,
-                                  height: 1.18,
+                            Center(
+                                child: Image.asset(
+                              AssetConstants.loginScreen,
+                              fit: BoxFit.cover,
+                              height: 400,
+                              width: double.infinity,
+                            )),
+                            Positioned(
+                                top: 0,
+                                right: 0,
+                                child: Padding(
+                                  padding: const EdgeInsetsGeometry.all(8),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      if (widget.isGuest == false) {
+                                        if (mounted) context.go(AppRoutes.home);
+                                      } else {
+                                        if (mounted) context.pop();
+                                      }
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.all(10),
+                                      padding: const EdgeInsets.all(7),
+                                      decoration: BoxDecoration(
+                                          boxShadow: [
+                                            BoxShadow(
+                                                color: Colors.orange.shade100,
+                                                offset: Offset(0, 4),
+                                                blurRadius: 2,
+                                                spreadRadius: 2)
+                                          ],
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          gradient: const LinearGradient(
+                                              colors: [
+                                                _C.primary,
+                                                Colors.orangeAccent
+                                              ])),
+                                      child: const Text(
+                                        "Skip",
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ),
                                 )),
-                            const SizedBox(height: 10),
-                            Text(
-                                "We'll send a one-time code to verify\nyour identity. No password needed!",
-                                style: TextStyle(
-                                  fontFamily: _C.font,
-                                  fontSize: 14,
-                                  height: 1.6,
-                                  color: _C.ink.withOpacity(0.5),
-                                )),
-                            const SizedBox(height: 20),
-
-                            // Phone input
-                            AppTextField(
-                              ctrl: _ctrl,
-                              keyboard: TextInputType.number,
-                              //code: _code,
-                              prefix: Container(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 5),
-                                child: const Text(
-                                  "+91",
-                                  style: TextStyle(color: Colors.black),
-                                ),
-                              ),
-                              validator: (v) {
-                                print(_ctrl);
-                                return Validator.validatePhoneNumber(v!);
-                              },
-                              onChange: (v) {
-                                //   setState(() => _code = v!);
-                              },
-                              hint: 'Mobile number',
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                const Icon(Icons.lock_outline_rounded,
-                                    size: 13, color: _C.primary),
-                                const SizedBox(width: 5),
-                                Text('Your number is never shared with anyone.',
-                                    style: TextStyle(
-                                      fontFamily: _C.font,
-                                      fontSize: 11,
-                                      color: _C.ink.withOpacity(0.35),
-                                    )),
-                              ],
-                            ),
-                            const SizedBox(height: 32),
-
-                            _BigBtn(
-                                label: 'Send OTP',
-                                icon: Icons.send_rounded,
-                                loading: _loading,
-                                onTap: _send),
-                            const SizedBox(height: 24),
-
-                            // _Divider(label: 'or sign in with'),
-                            // const SizedBox(height: 18),
-                            //
-                            // Row(
-                            //   children: [
-                            //     Expanded(child: _SocialTile(emoji: '🌐', label: 'Google', onTap: () {})),
-                            //     const SizedBox(width: 12),
-                            //     Expanded(child: _SocialTile(emoji: '🍎', label: 'Apple', onTap: () {})),
-                            //   ],
-                            // ),
-                            // const SizedBox(height: 28),
-                            //
-                            // Center(
-                            //   child: RichText(
-                            //     text: TextSpan(
-                            //       style: TextStyle(fontFamily: _C.font, fontSize: 13, color: _C.ink.withOpacity(0.5)),
-                            //       children: [
-                            //         const TextSpan(text: 'Already have an account?  '),
-                            //         WidgetSpan(
-                            //           child: GestureDetector(
-                            //             onTap: () {},
-                            //             child: const Text('Sign in',
-                            //                 style: TextStyle(
-                            //                   fontFamily: _C.font, fontSize: 13,
-                            //                   fontWeight: FontWeight.w800, color: _C.primary,
-                            //                 )),
-                            //           ),
-                            //         ),
-                            //       ],
-                            //     ),
-                            //   ),
-                            // ),
                           ],
                         ),
-                      )
-                    ],
+
+                        //      _BackBtn(onTap: () => Navigator.maybePop(context)),
+
+                        // Illustration
+
+                        // Heading
+
+                        // Heading
+                        Container(
+                          padding: const EdgeInsets.all(15),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Enter your\nphone number',
+                                  style: TextStyle(
+                                    fontFamily: _C.font,
+                                    fontSize: 25,
+                                    fontWeight: FontWeight.w800,
+                                    color: _C.ink,
+                                    height: 1.18,
+                                  )),
+                              const SizedBox(height: 10),
+                              Text(
+                                  "We'll send a one-time code to verify\nyour identity. No password needed!",
+                                  style: TextStyle(
+                                    fontFamily: _C.font,
+                                    fontSize: 14,
+                                    height: 1.6,
+                                    color: _C.ink.withOpacity(0.5),
+                                  )),
+                              const SizedBox(height: 20),
+
+                              // Phone input
+                              AppTextField(
+                                ctrl: _ctrl,
+                                keyboard: TextInputType.number,
+                                //code: _code,
+                                prefix: Container(
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 5),
+                                  child: const Text(
+                                    "+91",
+                                    style: TextStyle(color: Colors.black),
+                                  ),
+                                ),
+                                validator: (v) {
+                                  print(_ctrl);
+                                  return Validator.validatePhoneNumber(v!);
+                                },
+                                onChange: (v) {
+                                  //   setState(() => _code = v!);
+                                },
+                                hint: 'Mobile number',
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  const Icon(Icons.lock_outline_rounded,
+                                      size: 13, color: _C.primary),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                      'Your number is never shared with anyone.',
+                                      style: TextStyle(
+                                        fontFamily: _C.font,
+                                        fontSize: 11,
+                                        color: _C.ink.withOpacity(0.35),
+                                      )),
+                                ],
+                              ),
+                              const SizedBox(height: 32),
+
+                              _BigBtn(
+                                  label: 'Send OTP',
+                                  icon: Icons.send_rounded,
+                                  loading: _loading,
+                                  onTap: _send),
+                              const SizedBox(height: 24),
+
+                              // _Divider(label: 'or sign in with'),
+                              // const SizedBox(height: 18),
+                              //
+                              // Row(
+                              //   children: [
+                              //     Expanded(child: _SocialTile(emoji: '🌐', label: 'Google', onTap: () {})),
+                              //     const SizedBox(width: 12),
+                              //     Expanded(child: _SocialTile(emoji: '🍎', label: 'Apple', onTap: () {})),
+                              //   ],
+                              // ),
+                              // const SizedBox(height: 28),
+                              //
+                              // Center(
+                              //   child: RichText(
+                              //     text: TextSpan(
+                              //       style: TextStyle(fontFamily: _C.font, fontSize: 13, color: _C.ink.withOpacity(0.5)),
+                              //       children: [
+                              //         const TextSpan(text: 'Already have an account?  '),
+                              //         WidgetSpan(
+                              //           child: GestureDetector(
+                              //             onTap: () {},
+                              //             child: const Text('Sign in',
+                              //                 style: TextStyle(
+                              //                   fontFamily: _C.font, fontSize: 13,
+                              //                   fontWeight: FontWeight.w800, color: _C.primary,
+                              //                 )),
+                              //           ),
+                              //         ),
+                              //       ],
+                              //     ),
+                              //   ),
+                              // ),
+                            ],
+                          ),
+                        )
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ]),
+          ]),
+        ),
       ),
     );
   }

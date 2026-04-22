@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:food_delivery_app/constants/app_constants.dart';
-import 'package:food_delivery_app/model/home_data.dart';
 import 'package:food_delivery_app/model/profile_data.dart';
 import 'package:food_delivery_app/routes/app_routes.dart';
 import 'package:food_delivery_app/screens/home/restaurant_detail_screen.dart';
-import 'package:food_delivery_app/screens/profile/wallet_screen.dart';
 import 'package:food_delivery_app/utils/api_service.dart';
 import 'package:food_delivery_app/utils/helper.dart';
 import 'package:food_delivery_app/utils/sharedpreference_helper.dart';
@@ -37,8 +35,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void initState() {
-    data = SharedPreferenceHelper.getUserObject();
+    checkLogin();
     super.initState();
+  }
+
+  checkLogin() {
+    String? token = SharedPreferenceHelper.getAuthToken();
+    if (token == null || token.isEmpty) {
+      context.push(AppRoutes.loginPath(true));
+    }
+    data = SharedPreferenceHelper.getUserObject();
   }
 
   @override
@@ -84,8 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) =>
-                                  CouponPage(
+                              builder: (context) => CouponPage(
                                     orderTotal: 0,
                                     onCouponApplied: (String value) {},
                                   )));
@@ -257,7 +262,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SafeArea(
               child: Padding(
                 padding:
-                const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -287,8 +292,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: Text(
                                     data.data!.name != null
                                         ? data.data!.name!.length > 0
-                                        ? data.data!.name![0]
-                                        : "U"
+                                            ? data.data!.name![0]
+                                            : "U"
                                         : "U",
                                     style: TextStyle(
                                       fontFamily: _C.font,
@@ -406,8 +411,7 @@ class _StatsRow extends StatelessWidget {
     );
   }
 
-  Widget _divider() =>
-      Container(
+  Widget _divider() => Container(
         width: 1,
         height: 40,
         color: _C.divider,
@@ -584,10 +588,7 @@ class _MenuGroup extends StatelessWidget {
           ],
         ),
         child: Column(
-          children: items
-              .asMap()
-              .entries
-              .map((entry) {
+          children: items.asMap().entries.map((entry) {
             final isLast = entry.key == items.length - 1;
             return Column(
               children: [
@@ -713,30 +714,29 @@ class _LogoutButton extends StatelessWidget {
           onTap: () async {
             final confirm = await showDialog(
               context: context,
-              builder: (context) =>
-                  AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    title: const Text("Confirm Logout"),
-                    content: const Text("Are you sure you want to log out?"),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text("Cancel"),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text("Logout"),
-                      ),
-                    ],
+              builder: (context) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: const Text("Confirm Logout"),
+                content: const Text("Are you sure you want to log out?"),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text("Cancel"),
                   ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text("Logout"),
+                  ),
+                ],
+              ),
             );
 
             if (confirm == true) {
               await ApiService().deleteFCMToken();
               SharedPreferenceHelper.clear();
-              context.go(AppRoutes.login);
+              context.go(AppRoutes.loginPath(true));
             }
           },
           borderRadius: BorderRadius.circular(16),
@@ -746,7 +746,7 @@ class _LogoutButton extends StatelessWidget {
               color: const Color(0xFFFFEEEA),
               borderRadius: BorderRadius.circular(16),
               border:
-              Border.all(color: _C.primary.withOpacity(0.2), width: 1.5),
+                  Border.all(color: _C.primary.withOpacity(0.2), width: 1.5),
             ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -781,43 +781,42 @@ class _DeleteButton extends StatelessWidget {
             var confirm = false;
             confirm = await showDialog(
               context: context,
-              builder: (context) =>
-                  AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    title: const Text("Confirm Delete"),
-                    content: const Text("Are you sure you want to delete?"),
-                    actions: confirm == true
-                        ? [
-                      Center(
-                        child: AppDefaultLoader(loading: confirm),
-                      )
-                    ]
-                        : [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text("Cancel"),
-                      ),
-                      ElevatedButton(
-                        style: const ButtonStyle(
-                            backgroundColor:
-                            WidgetStatePropertyAll(Colors.red)),
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text("Delete"),
-                      ),
-                    ],
-                  ),
+              builder: (context) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: const Text("Confirm Delete"),
+                content: const Text("Are you sure you want to delete?"),
+                actions: confirm == true
+                    ? [
+                        Center(
+                          child: AppDefaultLoader(loading: confirm),
+                        )
+                      ]
+                    : [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text("Cancel"),
+                        ),
+                        ElevatedButton(
+                          style: const ButtonStyle(
+                              backgroundColor:
+                                  WidgetStatePropertyAll(Colors.red)),
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text("Delete"),
+                        ),
+                      ],
+              ),
             );
 
             if (confirm == true) {
               final userId = SharedPreferenceHelper.getUserId();
               final res =
-              await ApiService().deleteAccount(userId: userId ?? "");
+                  await ApiService().deleteAccount(userId: userId ?? "");
               Helper().showToast(context, res['message'], res['statusCode']);
               SharedPreferenceHelper.clear();
               await ApiService().deleteFCMToken();
-              context.go(AppRoutes.login);
+              context.go(AppRoutes.loginPath(true));
             }
           },
           borderRadius: BorderRadius.circular(16),
@@ -850,8 +849,7 @@ class _DeleteButton extends StatelessWidget {
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-Widget _badge(String count, {Color color = _C.primary}) =>
-    Container(
+Widget _badge(String count, {Color color = _C.primary}) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withOpacity(0.12),
@@ -866,8 +864,7 @@ Widget _badge(String count, {Color color = _C.primary}) =>
           )),
     );
 
-Widget _switchWidget({bool value = true}) =>
-    Transform.scale(
+Widget _switchWidget({bool value = true}) => Transform.scale(
       scale: 0.8,
       child: Switch(
         value: value,

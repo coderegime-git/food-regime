@@ -143,19 +143,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _fetchCart() async {
-    try {
-      final res = await apiService.getCart();
-      setState(() => _cartData = res);
-      if (_cartData != null) {
-        _totalCartPrice = _cartData!.itemsTotal ?? 0;
-        totalCartCount = _cartData!.items!.length;
-        if (_cartData != null && _cartData!.restaurantId != null) {
-          await getRestaurantDetails(_cartData!.restaurantId.toString());
+    String? token = SharedPreferenceHelper.getAuthToken();
+    if (token != null && token.isNotEmpty) {
+      try {
+        final res = await apiService.getCart();
+        setState(() => _cartData = res);
+        if (_cartData != null) {
+          _totalCartPrice = _cartData!.itemsTotal ?? 0;
+          totalCartCount = _cartData!.items!.length;
+          if (_cartData != null && _cartData!.restaurantId != null) {
+            await getRestaurantDetails(_cartData!.restaurantId.toString());
+          }
         }
+        setState(() {});
+      } catch (e) {
+        debugPrint('getCart error: $e');
       }
-      setState(() {});
-    } catch (e) {
-      debugPrint('getCart error: $e');
     }
   }
 
@@ -238,11 +241,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       AppConstants.categories = homeData.data!.categories;
     }
     if (profileData?.data != null) {
-      final user = profileData!.data!;
-      if (user.defaultAddress == null) await buildAddress();
-      if ((user.name ?? '').isEmpty) await _goToEditProfile();
+      String? token = SharedPreferenceHelper.getAuthToken();
+      if (token != null && token.isNotEmpty) {
+        final user = profileData!.data!;
+        if (user.defaultAddress == null) await buildAddress();
+        if ((user.name ?? '').isEmpty) await _goToEditProfile();
+      }
+      await _fetchCart();
     }
-    await _fetchCart();
 
     setState(() => isLoad = false);
   }
@@ -299,18 +305,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       );
 
   Future<void> buildAddress() async {
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: false,
-      enableDrag: false,
-      isDismissible: false,
-      useSafeArea: true,
-      builder: (_) => const SafeArea(child: SavedAddressesScreen()),
-    );
-    final data = await ApiService().getProfile();
-    SharedPreferenceHelper.setUserObject(data);
-    profileData = SharedPreferenceHelper.getUserObject();
-    setState(() {});
+    String? token = SharedPreferenceHelper.getAuthToken();
+    if (token != null && token.isNotEmpty) {
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: false,
+        enableDrag: false,
+        isDismissible: false,
+        useSafeArea: true,
+        builder: (_) => const SafeArea(child: SavedAddressesScreen()),
+      );
+      final data = await ApiService().getProfile();
+      SharedPreferenceHelper.setUserObject(data);
+      profileData = SharedPreferenceHelper.getUserObject();
+      setState(() {});
+    } else {
+      if (mounted) context.push(AppRoutes.loginPath(true));
+    }
   }
 
   Widget _pRestaurantCard(Restaurant restaurant) {
@@ -1009,7 +1020,15 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
                         // Notification
                         GestureDetector(
                           onTap: () {
-                            context.push(AppRoutes.notifications);
+                            String? token =
+                                SharedPreferenceHelper.getAuthToken();
+                            if (token != null && token.isNotEmpty) {
+                              context.push(AppRoutes.notifications);
+                            } else {
+                              if (mounted) {
+                                context.push(AppRoutes.loginPath(true));
+                              }
+                            }
                           },
                           child: const _IconPill(
                             icon: Icons.notifications_outlined,
@@ -1020,10 +1039,18 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
                         // Avatar
                         GestureDetector(
                             onTap: () {
-                              context.push(AppRoutes.editProfile);
-                              widget.profileData =
-                                  SharedPreferenceHelper.getUserObject();
-                              setState(() {});
+                              String? token =
+                                  SharedPreferenceHelper.getAuthToken();
+                              if (token != null && token.isNotEmpty) {
+                                context.push(AppRoutes.editProfile);
+                                widget.profileData =
+                                    SharedPreferenceHelper.getUserObject();
+                                setState(() {});
+                              } else {
+                                if (mounted) {
+                                  context.push(AppRoutes.loginPath(true));
+                                }
+                              }
                             },
                             child:
                                 _AvatarPill(profileData: widget.profileData)),

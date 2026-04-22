@@ -2,10 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:food_delivery_app/utils/api_service.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../model/cart_data.dart';
 import '../../model/restauant_detail_data.dart' as res;
 import '../../routes/app_routes.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/sharedpreference_helper.dart';
 import 'home_screen.dart';
 
 final mainShellKey = GlobalKey<_MainShellState>();
@@ -67,20 +69,23 @@ class _MainShellState extends State<MainShell>
 
   Future<void> fetchCart() async {
     print("homeee");
-    try {
-      final result = await ApiService().getCart();
-      if (!mounted) return;
-      setState(() {
-        _cartData = result;
-        _totalCartPrice = _cartData?.itemsTotal ?? 0;
-        totalCartCount = _cartData?.items?.length ?? 0;
-      });
+    String? token = SharedPreferenceHelper.getAuthToken();
+    if (token != null && token.isNotEmpty) {
+      try {
+        final result = await ApiService().getCart();
+        if (!mounted) return;
+        setState(() {
+          _cartData = result;
+          _totalCartPrice = _cartData?.itemsTotal ?? 0;
+          totalCartCount = _cartData?.items?.length ?? 0;
+        });
 
-      if (_cartData?.restaurantId != null) {
-        await _getRestaurantDetails(_cartData!.restaurantId.toString());
+        if (_cartData?.restaurantId != null) {
+          await _getRestaurantDetails(_cartData!.restaurantId.toString());
+        }
+      } catch (e) {
+        debugPrint('getCart error: $e');
       }
-    } catch (e) {
-      debugPrint('getCart error: $e');
     }
   }
 
