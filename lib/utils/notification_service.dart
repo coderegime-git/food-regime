@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:food_delivery_app/utils/sharedpreference_helper.dart';
 import 'package:go_router/go_router.dart';
 
 import '../routes/app_routes.dart';
@@ -90,7 +91,10 @@ class NotificationService {
     // Token refresh listener
     _fcm.onTokenRefresh.listen((newToken) async {
       debugPrint('🔄 FCM Token refreshed: $newToken');
-      await ApiService().updateFCMToken(fcm: newToken);
+      final authToken = SharedPreferenceHelper.getAuthToken();
+      if (authToken != null && authToken != "") {
+        await ApiService().updateFCMToken(fcm: newToken);
+      }
     });
   }
 

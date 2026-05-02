@@ -9,8 +9,8 @@ class AppConstants {
   // ─── App Info ──────────────────────────────────────────────────────────────
   static const String appName = 'FoodRegime';
   static const String appTagline = 'Delicious food, delivered fast';
-  static const String appVersion = ' 1.0.4';
-  static const String oldVersion = ' 1.0.1';
+  static const String appVersion = ' 1.0.0';
+  static const String oldVersion = ' 1.0.0';
 
   // ─── API Configuration ─────────────────────────────────────────────────────
   static const String baseUrl =

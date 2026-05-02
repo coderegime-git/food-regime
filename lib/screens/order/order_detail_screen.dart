@@ -431,7 +431,7 @@ class _TopBar extends StatelessWidget {
                     fontFamily: 'monospace',
                     letterSpacing: 0.8)),
           ])),
-          _IBtn(Icons.ios_share_rounded, () {}),
+          //   _IBtn(Icons.ios_share_rounded, () {}),
         ]),
       );
 }

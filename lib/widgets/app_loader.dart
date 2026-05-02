@@ -19,8 +19,8 @@ class AppDefaultLoader extends StatelessWidget {
                 color: Colors.transparent,
                 child: /*Lottie.asset('assets/json/circular_loader.json'),*/
                     const Loader(
+                  color: Colors.white,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    /*color ??*/
                     AppColors.primary,
                   ),
                 )),

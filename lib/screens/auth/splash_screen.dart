@@ -41,14 +41,18 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _navigate() async {
     //if (mounted) context.go(AppRoutes.onboarding);
-    String? userId = SharedPreferenceHelper.getUserId();
-    if (userId != null && userId != "" && userId != "0") {
-      final data = await ApiService().getProfile();
-      SharedPreferenceHelper.setUserObject(data);
-      if (mounted) context.go(AppRoutes.home);
-    } else {
-      if (mounted) context.go(AppRoutes.loginPath(false));
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      String? userId = SharedPreferenceHelper.getUserId();
+      print(userId);
+      print("userIduserId");
+      if (userId != null && userId != "" && userId != "0") {
+        final data = await ApiService().getProfile();
+        SharedPreferenceHelper.setUserObject(data);
+        if (mounted) context.go(AppRoutes.home);
+      } else {
+        if (mounted) context.go(AppRoutes.loginPath(false));
+      }
+    });
   }
 
   @override
