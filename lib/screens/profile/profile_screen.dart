@@ -32,6 +32,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late ProfileData data;
+  bool isLoad = true;
 
   @override
   void initState() {
@@ -41,10 +42,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   checkLogin() {
     String? token = SharedPreferenceHelper.getAuthToken();
-    if (token == null || token.isEmpty) {
-      context.push(AppRoutes.loginPath(true));
-    }
+    print(token);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (token == null || token.isEmpty) {
+        await context.push(AppRoutes.loginPath(false));
+      }
+
+      //}
+    });
     data = SharedPreferenceHelper.getUserObject();
+
+    print("tokentoken");
   }
 
   @override
@@ -174,7 +182,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),*/
                 ]),
                 const SizedBox(height: 28),
-                _LogoutButton(), const SizedBox(height: 28),
+                _LogoutButton(),
+                const SizedBox(height: 28),
 
                 _DeleteButton(),
 
@@ -735,8 +744,8 @@ class _LogoutButton extends StatelessWidget {
 
             if (confirm == true) {
               await ApiService().deleteFCMToken();
-              SharedPreferenceHelper.clear();
-              context.go(AppRoutes.loginPath(true));
+              await SharedPreferenceHelper.clear();
+              context.go(AppRoutes.loginPath(false));
             }
           },
           borderRadius: BorderRadius.circular(16),
@@ -816,7 +825,7 @@ class _DeleteButton extends StatelessWidget {
               Helper().showToast(context, res['message'], res['statusCode']);
               SharedPreferenceHelper.clear();
               await ApiService().deleteFCMToken();
-              context.go(AppRoutes.loginPath(true));
+              context.go(AppRoutes.loginPath(false));
             }
           },
           borderRadius: BorderRadius.circular(16),

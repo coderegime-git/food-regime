@@ -87,7 +87,9 @@ class _PhoneEntryState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    final pad = MediaQuery.of(context).padding;
+    final pad = MediaQuery
+        .of(context)
+        .padding;
     return WillPopScope(
       onWillPop: () async {
         if (widget.isGuest == false) {
@@ -118,11 +120,11 @@ class _PhoneEntryState extends State<LoginScreen>
                           children: [
                             Center(
                                 child: Image.asset(
-                              AssetConstants.loginScreen,
-                              fit: BoxFit.cover,
-                              height: 400,
-                              width: double.infinity,
-                            )),
+                                  AssetConstants.loginScreen,
+                                  fit: BoxFit.cover,
+                                  height: 400,
+                                  width: double.infinity,
+                                )),
                             Positioned(
                                 top: 0,
                                 right: 0,
@@ -133,7 +135,7 @@ class _PhoneEntryState extends State<LoginScreen>
                                       if (widget.isGuest == false) {
                                         if (mounted) context.go(AppRoutes.home);
                                       } else {
-                                        if (mounted) context.pop();
+                                        if (mounted) context.canPop();
                                       }
                                     },
                                     child: Container(
@@ -148,7 +150,7 @@ class _PhoneEntryState extends State<LoginScreen>
                                                 spreadRadius: 2)
                                           ],
                                           borderRadius:
-                                              BorderRadius.circular(10),
+                                          BorderRadius.circular(10),
                                           gradient: const LinearGradient(
                                               colors: [
                                                 _C.primary,
@@ -204,7 +206,7 @@ class _PhoneEntryState extends State<LoginScreen>
                                 //code: _code,
                                 prefix: Container(
                                   padding:
-                                      const EdgeInsets.symmetric(horizontal: 5),
+                                  const EdgeInsets.symmetric(horizontal: 5),
                                   child: const Text(
                                     "+91",
                                     style: TextStyle(color: Colors.black),
@@ -362,10 +364,12 @@ class _OtpVerifyState extends State<OtpVerifyScreen>
 
     _boxAc = List.generate(
         _len,
-        (_) => AnimationController(
-            vsync: this, duration: const Duration(milliseconds: 260)));
+            (_) =>
+            AnimationController(
+                vsync: this, duration: const Duration(milliseconds: 260)));
     _boxS = _boxAc
-        .map((c) => Tween<double>(begin: 1.0, end: 1.2)
+        .map((c) =>
+        Tween<double>(begin: 1.0, end: 1.2)
             .animate(CurvedAnimation(parent: c, curve: Curves.easeOutBack)))
         .toList();
 
@@ -407,9 +411,12 @@ class _OtpVerifyState extends State<OtpVerifyScreen>
     _enterAc.dispose();
     _shakeAc.dispose();
     _successAc.dispose();
-    for (final c in _boxAc) c.dispose();
-    for (final c in _ctrls) c.dispose();
-    for (final n in _nodes) n.dispose();
+    for (final c in _boxAc)
+      c.dispose();
+    for (final c in _ctrls)
+      c.dispose();
+    for (final n in _nodes)
+      n.dispose();
     _timer?.cancel();
     super.dispose();
   }
@@ -470,7 +477,7 @@ class _OtpVerifyState extends State<OtpVerifyScreen>
       });
       if (!mounted) return;
       final data =
-          await apiService.verifyOTP(phoneNumber: widget.phone, otp: _otp);
+      await apiService.verifyOTP(phoneNumber: widget.phone, otp: _otp);
       print(data);
       if (data['statusCode'] == 1) {
         Helper().showToast(context, data['message'], data['statusCode']);
@@ -513,7 +520,8 @@ class _OtpVerifyState extends State<OtpVerifyScreen>
 
   void _resend() async {
     if (_tick > 0) return;
-    for (final c in _ctrls) c.clear();
+    for (final c in _ctrls)
+      c.clear();
     setState(() => _error = false);
     _nodes[0].requestFocus();
     _startTimer();
@@ -524,7 +532,9 @@ class _OtpVerifyState extends State<OtpVerifyScreen>
       Helper().showToast(context, data['message'], data['statusCode']);
 
       Future.delayed(const Duration(milliseconds: 350), () async {
-        for (int i = 0; i < data['otp'].toString().length; i++) {
+        for (int i = 0; i < data['otp']
+            .toString()
+            .length; i++) {
           _ctrls[i].text = data['otp'].toString()[i];
         }
         if (_ctrls.length >= 5) {
@@ -540,7 +550,7 @@ class _OtpVerifyState extends State<OtpVerifyScreen>
   void _snack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content:
-          Text(msg, style: const TextStyle(fontFamily: _C.font, fontSize: 13)),
+      Text(msg, style: const TextStyle(fontFamily: _C.font, fontSize: 13)),
       behavior: SnackBarBehavior.floating,
       backgroundColor: _C.ink,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -550,7 +560,9 @@ class _OtpVerifyState extends State<OtpVerifyScreen>
 
   @override
   Widget build(BuildContext context) {
-    final pad = MediaQuery.of(context).padding;
+    final pad = MediaQuery
+        .of(context)
+        .padding;
     return Scaffold(
       backgroundColor: _C.bg,
       body: Form(
@@ -577,26 +589,26 @@ class _OtpVerifyState extends State<OtpVerifyScreen>
                             ScaleTransition(scale: anim, child: child),
                         child: _success
                             ? ScaleTransition(
-                                key: const ValueKey('ok'),
-                                scale: _successScale,
-                                child: Image.asset(
-                                  AssetConstants.otpSuccess,
-                                  height: 120,
-                                  width: 120,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
+                          key: const ValueKey('ok'),
+                          scale: _successScale,
+                          child: Image.asset(
+                            AssetConstants.otpSuccess,
+                            height: 120,
+                            width: 120,
+                            fit: BoxFit.cover,
+                          ),
+                        )
                             : _error
-                                ? const _IconBox(
-                                    key: const ValueKey('err'),
-                                    color: const Color(0xFFC62828),
-                                    icon: Icons.warning_amber_rounded)
-                                : Image.asset(
-                                    AssetConstants.password,
-                                    height: 120,
-                                    width: 120,
-                                    fit: BoxFit.cover,
-                                  ),
+                            ? const _IconBox(
+                            key: const ValueKey('err'),
+                            color: const Color(0xFFC62828),
+                            icon: Icons.warning_amber_rounded)
+                            : Image.asset(
+                          AssetConstants.password,
+                          height: 120,
+                          width: 120,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 25),
@@ -606,33 +618,33 @@ class _OtpVerifyState extends State<OtpVerifyScreen>
                       duration: const Duration(milliseconds: 300),
                       child: _success
                           ? const Text('You\'re verified! 🎉',
-                              key: ValueKey('h_ok'),
-                              style: TextStyle(
-                                fontFamily: _C.font,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF2E7D32),
-                                height: 1.2,
-                              ))
+                          key: ValueKey('h_ok'),
+                          style: TextStyle(
+                            fontFamily: _C.font,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF2E7D32),
+                            height: 1.2,
+                          ))
                           : _error
-                              ? const Text('Wrong code.\nTry again.',
-                                  key: ValueKey('h_err'),
-                                  style: TextStyle(
-                                    fontFamily: _C.font,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w800,
-                                    color: Color(0xFFC62828),
-                                    height: 1.2,
-                                  ))
-                              : const Text('Check your\nmessages',
-                                  key: ValueKey('h_def'),
-                                  style: TextStyle(
-                                    fontFamily: _C.font,
-                                    fontSize: 25,
-                                    fontWeight: FontWeight.w800,
-                                    color: _C.ink,
-                                    height: 1.18,
-                                  )),
+                          ? const Text('Wrong code.\nTry again.',
+                          key: ValueKey('h_err'),
+                          style: TextStyle(
+                            fontFamily: _C.font,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFC62828),
+                            height: 1.2,
+                          ))
+                          : const Text('Check your\nmessages',
+                          key: ValueKey('h_def'),
+                          style: TextStyle(
+                            fontFamily: _C.font,
+                            fontSize: 25,
+                            fontWeight: FontWeight.w800,
+                            color: _C.ink,
+                            height: 1.18,
+                          )),
                     ),
                     const SizedBox(height: 15),
                     RichText(
@@ -659,20 +671,22 @@ class _OtpVerifyState extends State<OtpVerifyScreen>
                     Center(
                       child: ConstrainedBox(
                         constraints:
-                            const BoxConstraints(maxWidth: kIsWeb ? 520 : 320),
+                        const BoxConstraints(maxWidth: kIsWeb ? 520 : 320),
                         child: AnimatedBuilder(
                           animation: _shakeX,
-                          builder: (_, child) => Transform.translate(
-                            offset: Offset(_shakeX.value, 0),
-                            child: child,
-                          ),
+                          builder: (_, child) =>
+                              Transform.translate(
+                                offset: Offset(_shakeX.value, 0),
+                                child: child,
+                              ),
                           child: SizedBox(
                             width: kIsWeb ? 400 : double.infinity,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: List.generate(
                                   _len,
-                                  (i) => ScaleTransition(
+                                      (i) =>
+                                      ScaleTransition(
                                         scale: _boxS[i],
                                         child: _OtpBox(
                                           ctrl: _ctrls[i],
@@ -802,28 +816,28 @@ class _OtpBoxState extends State<_OtpBox> {
     final Color borderC = widget.success
         ? const Color(0xFF2E7D32)
         : widget.error
-            ? const Color(0xFFC62828)
-            : _focused
-                ? _C.primary
-                : filled
-                    ? _C.primary.withOpacity(0.5)
-                    : const Color(0xFFE0E0E0);
+        ? const Color(0xFFC62828)
+        : _focused
+        ? _C.primary
+        : filled
+        ? _C.primary.withOpacity(0.5)
+        : const Color(0xFFE0E0E0);
 
     final Color bgC = widget.success
         ? const Color(0xFFE8F5E9)
         : widget.error
-            ? const Color(0xFFFFEBEE)
-            : _focused
-                ? _C.primary.withOpacity(0.04)
-                : filled
-                    ? _C.primary.withOpacity(0.05)
-                    : Colors.white;
+        ? const Color(0xFFFFEBEE)
+        : _focused
+        ? _C.primary.withOpacity(0.04)
+        : filled
+        ? _C.primary.withOpacity(0.05)
+        : Colors.white;
 
     final Color textC = widget.success
         ? const Color(0xFF2E7D32)
         : widget.error
-            ? const Color(0xFFC62828)
-            : _C.ink;
+        ? const Color(0xFFC62828)
+        : _C.ink;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 160),
@@ -835,11 +849,11 @@ class _OtpBoxState extends State<_OtpBox> {
         border: Border.all(color: borderC, width: _focused ? 2.0 : 1.5),
         boxShadow: _focused
             ? [
-                BoxShadow(
-                    color: _C.primary.withOpacity(0.15),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4))
-              ]
+          BoxShadow(
+              color: _C.primary.withOpacity(0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 4))
+        ]
             : [],
       ),
       // Use a Stack so the TextField fills the box without any padding fighting
@@ -1070,11 +1084,11 @@ class _BigBtn extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: active
               ? [
-                  BoxShadow(
-                      color: _C.primary.withOpacity(0.4),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8))
-                ]
+            BoxShadow(
+                color: _C.primary.withOpacity(0.4),
+                blurRadius: 20,
+                offset: const Offset(0, 8))
+          ]
               : [],
         ),
         child: Material(
@@ -1087,23 +1101,23 @@ class _BigBtn extends StatelessWidget {
             child: Center(
               child: loading
                   ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation(Colors.white)))
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation(Colors.white)))
                   : Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text(label,
-                          style: const TextStyle(
-                            fontFamily: _C.font,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 0.3,
-                          )),
-                      const SizedBox(width: 8),
-                      Icon(icon, color: Colors.white, size: 18),
-                    ]),
+                Text(label,
+                    style: const TextStyle(
+                      fontFamily: _C.font,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: 0.3,
+                    )),
+                const SizedBox(width: 8),
+                Icon(icon, color: Colors.white, size: 18),
+              ]),
             ),
           ),
         ),
@@ -1118,7 +1132,8 @@ class _Divider extends StatelessWidget {
   const _Divider({required this.label});
 
   @override
-  Widget build(BuildContext context) => Row(children: [
+  Widget build(BuildContext context) =>
+      Row(children: [
         Expanded(child: Divider(color: Colors.grey.withOpacity(0.22))),
         Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -1140,7 +1155,8 @@ class _SocialTile extends StatelessWidget {
       {required this.emoji, required this.label, required this.onTap});
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context) =>
+      GestureDetector(
         onTap: onTap,
         child: Container(
           height: 52,
@@ -1170,13 +1186,16 @@ class _SocialTile extends StatelessWidget {
 }
 
 // ─── Route helper ─────────────────────────────────────────────────────────────
-Route _slidePageRoute(Widget page) => PageRouteBuilder(
+Route _slidePageRoute(Widget page) =>
+    PageRouteBuilder(
       pageBuilder: (_, __, ___) => page,
-      transitionsBuilder: (_, anim, __, child) => SlideTransition(
-        position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-            .animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-        child: child,
-      ),
+      transitionsBuilder: (_, anim, __, child) =>
+          SlideTransition(
+            position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+                .animate(
+                CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+            child: child,
+          ),
       transitionDuration: const Duration(milliseconds: 360),
     );
 
