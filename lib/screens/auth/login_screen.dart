@@ -129,7 +129,7 @@ class _PhoneEntryState extends State<LoginScreen>
                                 top: 0,
                                 right: 0,
                                 child: Padding(
-                                  padding: const EdgeInsetsGeometry.all(8),
+                                  padding: const EdgeInsets.all(8),
                                   child: GestureDetector(
                                     onTap: () {
                                       if (widget.isGuest == false) {
@@ -200,10 +200,15 @@ class _PhoneEntryState extends State<LoginScreen>
                               const SizedBox(height: 20),
 
                               // Phone input
-                              AppTextField(
-                                ctrl: _ctrl,
-                                keyboard: TextInputType.number,
-                                //code: _code,
+                                AppTextField(
+                                  ctrl: _ctrl,
+                                  keyboard: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    LengthLimitingTextInputFormatter(15),
+                                  ],
+                                  maxLength: 15,
+                                  //code: _code,
                                 prefix: Container(
                                   padding:
                                   const EdgeInsets.symmetric(horizontal: 5),

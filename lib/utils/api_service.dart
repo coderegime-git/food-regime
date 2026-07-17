@@ -318,8 +318,13 @@ class ApiService {
         {"phone": phoneNumber, "role": "customer", "otp": otp});
   }
 
-  Future<home_data.HomeResponse> getHomeData(page) async {
-    final data = await _helper.get("customer/home/?page$page&limit=15");
+  Future<home_data.HomeResponse> getHomeData(page,
+      {double? latitude, double? longitude}) async {
+    String url = "customer/home/?page=$page&limit=15";
+    if (latitude != null && longitude != null) {
+      url += "&latitude=$latitude&longitude=$longitude";
+    }
+    final data = await _helper.get(url);
     return home_data.HomeResponse.fromJson(data);
   }
 
@@ -513,6 +518,12 @@ class ApiService {
       {required int notificationId}) async {
     final res = await _helper.post(
         'customer/notifications/read/', {"notification_id": notificationId});
+    return res;
+  }
+
+  Future<Map<String, dynamic>> markAllNotificationsRead() async {
+    final res = await _helper.post(
+        'customer/notifications/read/', {"mark_all": true});
     return res;
   }
 

@@ -31,7 +31,7 @@ class Data {
   Data({this.count, this.next, this.previous, this.results});
 
   Data.fromJson(Map<String, dynamic> json) {
-    count = json['count'];
+    count = json['count'] is int ? json['count'] : int.tryParse(json['count']?.toString() ?? '');
     next = json['next'];
     previous = json['previous'];
     if (json['results'] != null) {
@@ -86,7 +86,7 @@ class Results {
     status = json['status'];
     createdAt = json['created_at'];
     deliveredAt = json['delivered_at'];
-    itemsCount = json['items_count'];
+    itemsCount = json['items_count'] is int ? json['items_count'] : int.tryParse(json['items_count']?.toString() ?? '');
   }
 
   Map<String, dynamic> toJson() {

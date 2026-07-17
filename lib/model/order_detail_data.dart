@@ -45,6 +45,10 @@ class Data {
   String? readyAt;
   String? pickedAt;
   String? deliveredAt;
+  String? discountAmount;
+  String? couponCode;
+  String? walletDeduction;
+  DeliveryPartner? deliveryPartner;
 
   Data(
       {this.id,
@@ -68,7 +72,11 @@ class Data {
       this.acceptedAt,
       this.readyAt,
       this.pickedAt,
-      this.deliveredAt});
+      this.deliveredAt,
+      this.discountAmount,
+      this.couponCode,
+      this.walletDeduction,
+      this.deliveryPartner});
 
   Data.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -102,6 +110,14 @@ class Data {
     readyAt = json['ready_at'];
     pickedAt = json['picked_at'];
     deliveredAt = json['delivered_at'];
+    discountAmount =
+        (json['discount_amount'] ?? json['discount'] ?? json['coupon_amount'])
+            ?.toString();
+    couponCode = json['coupon_code']?.toString();
+    walletDeduction = json['wallet_deduction']?.toString();
+    deliveryPartner = json['delivery_partner'] != null
+        ? new DeliveryPartner.fromJson(json['delivery_partner'])
+        : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -130,6 +146,12 @@ class Data {
     data['ready_at'] = this.readyAt;
     data['picked_at'] = this.pickedAt;
     data['delivered_at'] = this.deliveredAt;
+    data['discount_amount'] = this.discountAmount;
+    data['coupon_code'] = this.couponCode;
+    data['wallet_deduction'] = this.walletDeduction;
+    if (this.deliveryPartner != null) {
+      data['delivery_partner'] = this.deliveryPartner!.toJson();
+    }
     return data;
   }
 }
@@ -155,6 +177,52 @@ class Items {
     data['item_price'] = this.itemPrice;
     data['quantity'] = this.quantity;
     data['subtotal'] = this.subtotal;
+    return data;
+  }
+}
+
+class DeliveryPartner {
+  int? id;
+  String? name;
+  String? phone;
+  String? vehicleNumber;
+  String? vehicleType;
+  double? currentLatitude;
+  double? currentLongitude;
+  double? averageRating;
+
+  DeliveryPartner({
+    this.id,
+    this.name,
+    this.phone,
+    this.vehicleNumber,
+    this.vehicleType,
+    this.currentLatitude,
+    this.currentLongitude,
+    this.averageRating,
+  });
+
+  DeliveryPartner.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    name = json['name'];
+    phone = json['phone']?.toString();
+    vehicleNumber = json['vehicle_number'];
+    vehicleType = json['vehicle_type'];
+    currentLatitude = json['current_latitude']?.toDouble();
+    currentLongitude = json['current_longitude']?.toDouble();
+    averageRating = json['average_rating']?.toDouble();
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    data['name'] = this.name;
+    data['phone'] = this.phone;
+    data['vehicle_number'] = this.vehicleNumber;
+    data['vehicle_type'] = this.vehicleType;
+    data['current_latitude'] = this.currentLatitude;
+    data['current_longitude'] = this.currentLongitude;
+    data['average_rating'] = this.averageRating;
     return data;
   }
 }

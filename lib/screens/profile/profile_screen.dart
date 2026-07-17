@@ -823,9 +823,17 @@ class _DeleteButton extends StatelessWidget {
               final res =
                   await ApiService().deleteAccount(userId: userId ?? "");
               Helper().showToast(context, res['message'], res['statusCode']);
-              SharedPreferenceHelper.clear();
-              await ApiService().deleteFCMToken();
-              context.go(AppRoutes.loginPath(false));
+              
+              if (res['statusCode'] == 1) {
+                SharedPreferenceHelper.clear();
+                if (context.mounted) {
+                  context.go(AppRoutes.loginPath(false));
+                }
+                // Delete FCM token in background (fire & forget)
+                ApiService().deleteFCMToken().catchError((e) {
+                  debugPrint('FCM Token deletion failed: $e');
+                });
+              }
             }
           },
           borderRadius: BorderRadius.circular(16),

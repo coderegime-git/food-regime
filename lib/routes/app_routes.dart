@@ -7,6 +7,7 @@ import '../screens/home/restaurant_detail_screen.dart';
 import '../screens/order/confirm_order_screen.dart';
 import '../screens/order/order_detail_screen.dart';
 import '../screens/screens.dart';
+import '../screens/home/home_screen.dart' show homeRouteObserver;
 
 /// Named route constants to avoid magic strings.
 class AppRoutes {
@@ -92,6 +93,7 @@ class AppRouter {
     navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
+    observers: [homeRouteObserver],
 
     // ── Error page ──────────────────────────────────────────────────────────
     errorBuilder: (context, state) => ErrorScreen(error: state.error),
@@ -341,7 +343,8 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.searchScreen,
         builder: (context, state) {
-          return const SearchScreen();
+          final query = state.uri.queryParameters['q'] ?? '';
+          return SearchScreen(initialQuery: query.isEmpty ? null : query);
         },
       ),
     ],

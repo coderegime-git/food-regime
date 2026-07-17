@@ -46,14 +46,8 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
 
   // ── Computed ───────────────────────────────────────────────────────────────
   List<Results> get _filtered {
-    switch (_filter) {
-      case 'delivered':
-        return _allOrders.where((o) => o.status == 'delivered').toList();
-      case 'cancelled':
-        return _allOrders.where((o) => o.status == 'cancelled').toList();
-      default:
-        return List.from(_allOrders);
-    }
+    // The API handles the filtering, so we just return the loaded orders.
+    return List.from(_allOrders);
   }
 
   double get _totalSpent => _allOrders
@@ -61,17 +55,16 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
       .fold(0.0, (s, o) => s + (num.tryParse(o.totalAmount.toString()) ?? 0))
       .toDouble();
 
-  int get _deliveredCount =>
-      _allOrders.where((o) => o.status == 'delivered').length;
-
-  int get _cancelledCount =>
-      _allOrders.where((o) => o.status == 'cancelled').length;
+  int _totalAllCount = 0;
+  int _totalDeliveredCount = 0;
+  int _totalCancelledCount = 0;
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
+    _fetchCounts();
     _fetchPage(1);
     _scrollController.addListener(_onScroll);
   }
@@ -92,6 +85,22 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
   }
 
   // ── Fetch helpers ──────────────────────────────────────────────────────────
+
+  Future<void> _fetchCounts() async {
+    try {
+      final futures = await Future.wait([
+        _apiService.getOrderHistory(pageNo: '1', status: 'all'),
+        _apiService.getOrderHistory(pageNo: '1', status: 'delivered'),
+        _apiService.getOrderHistory(pageNo: '1', status: 'cancelled'),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _totalAllCount = futures[0].data?.count ?? 0;
+        _totalDeliveredCount = futures[1].data?.count ?? 0;
+        _totalCancelledCount = futures[2].data?.count ?? 0;
+      });
+    } catch (_) {}
+  }
 
   Future<void> _fetchPage(int page) async {
     if (page == 1) {
@@ -116,8 +125,16 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
         _hasMore = nextUrl != null;
         _initialLoading = false;
         _paginationLoading = false;
+        
+        // Also update the count for the current filter just in case
+        final currentCount = res.data?.count ?? 0;
+        if (_filter == 'all') _totalAllCount = currentCount;
+        if (_filter == 'delivered') _totalDeliveredCount = currentCount;
+        if (_filter == 'cancelled') _totalCancelledCount = currentCount;
       });
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[OrderHistory] _fetchPage error: $e');
+      debugPrint(st.toString());
       if (!mounted) return;
       setState(() {
         _initialLoading = false;
@@ -259,11 +276,11 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
   }
 
   Widget _buildQuickStats() {
-    final avgOrder = _deliveredCount > 0 ? _totalSpent / _deliveredCount : 0.0;
+    final avgOrder = _totalDeliveredCount > 0 ? _totalSpent / _totalDeliveredCount : 0.0;
     final items = [
-      ('🛍️', '${_allOrders.length}', 'Orders'),
-      ('✅', '$_deliveredCount', 'Delivered'),
-      ('❌', '$_cancelledCount', 'Cancelled'),
+      ('🛍️', '$_totalAllCount', 'Orders'),
+      ('✅', '$_totalDeliveredCount', 'Delivered'),
+      ('❌', '$_totalCancelledCount', 'Cancelled'),
       ('💸', '₹${avgOrder.toStringAsFixed(0)}', 'Avg. Order'),
     ];
     return Row(
@@ -310,9 +327,9 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
 
   Widget _buildFilterBar() {
     final filters = [
-      ('all', 'All', '${_allOrders.length}'),
-      ('delivered', 'Delivered', '$_deliveredCount'),
-      ('cancelled', 'Cancelled', '$_cancelledCount'),
+      ('all', 'All', '$_totalAllCount'),
+      ('delivered', 'Delivered', '$_totalDeliveredCount'),
+      ('cancelled', 'Cancelled', '$_totalCancelledCount'),
     ];
 
     return Container(
@@ -705,7 +722,13 @@ class _OrderCard extends StatelessWidget {
 
   String _formatDate(String raw) {
     try {
-      final dt = DateTime.parse(raw).toLocal();
+      // Treat naive strings (no 'Z' / no offset) as UTC — same fix as
+      // order_detail_screen. Without this, UTC times display as-is instead
+      // of being converted to the device's local timezone.
+      final hasTimezone = raw.endsWith('Z') ||
+          RegExp(r'[+-]\d{2}:\d{2}$').hasMatch(raw);
+      final normalized = hasTimezone ? raw : '${raw}Z';
+      final dt = DateTime.parse(normalized).toLocal();
       const months = [
         'Jan',
         'Feb',

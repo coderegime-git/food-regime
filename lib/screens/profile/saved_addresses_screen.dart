@@ -156,7 +156,7 @@ class _AddressListScreenState extends State<SavedAddressesScreen> {
   Future<void> _deleteAddress(AddressModel address) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         backgroundColor: _cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Delete Address',
@@ -168,12 +168,12 @@ class _AddressListScreenState extends State<SavedAddressesScreen> {
             style: TextStyle(color: _textSecondary, fontSize: 14)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(ctx, false),
             child:
                 const Text('Cancel', style: TextStyle(color: _textSecondary)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Delete',
                 style: TextStyle(color: _danger, fontWeight: FontWeight.w700)),
           ),

@@ -22,7 +22,8 @@ const kGreen = Color(0xFF22C55E);
 // ─── Search Screen ────────────────────────────────────────────────────────────
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final String? initialQuery;
+  const SearchScreen({super.key, this.initialQuery});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -45,6 +46,12 @@ class _SearchScreenState extends State<SearchScreen>
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 2, vsync: this);
+    if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+      _ctrl.text = widget.initialQuery!;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _search(widget.initialQuery!);
+      });
+    }
   }
 
   @override

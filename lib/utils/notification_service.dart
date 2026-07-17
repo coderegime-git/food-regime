@@ -60,9 +60,9 @@ class NotificationService {
     );
 
     await _localNotifications.initialize(
+      initSettings,
       onDidReceiveNotificationResponse: _onNotificationTap,
       onDidReceiveBackgroundNotificationResponse: _onNotificationTap,
-      settings: initSettings,
     );
 
     // 4. Register background handler (must happen before runApp)
@@ -138,10 +138,10 @@ class NotificationService {
     if (notification == null) return;
 
     await _localNotifications.show(
-      id: notification.hashCode,
-      title: notification.title,
-      body: notification.body,
-      notificationDetails: NotificationDetails(
+      notification.hashCode,
+      notification.title,
+      notification.body,
+      NotificationDetails(
         android: AndroidNotificationDetails(
           _androidChannel.id,
           _androidChannel.name,

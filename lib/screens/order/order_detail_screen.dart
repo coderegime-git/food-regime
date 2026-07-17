@@ -6,6 +6,8 @@ import 'package:food_delivery_app/utils/api_service.dart';
 import 'package:food_delivery_app/widgets/app_loader.dart';
 import 'package:food_delivery_app/widgets/common_textform_field.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../routes/app_routes.dart';
 import '../../utils/helper.dart';
@@ -102,9 +104,17 @@ Color _statusBgColor(String status) {
   }
 }
 
+/// Parses [iso] as UTC when no timezone indicator is present (the API
+/// returns naive UTC strings without a trailing 'Z'), then converts to
+/// the device's local timezone before formatting.
 String _fmtDate(String iso) {
   try {
-    final dt = DateTime.parse(iso).toLocal();
+    // If the string has no 'Z' and no '+/-HH:MM' offset, treat it as UTC
+    // by appending 'Z', so DateTime.parse → .toLocal() works correctly.
+    final hasTimezone = iso.endsWith('Z') ||
+        RegExp(r'[+-]\d{2}:\d{2}$').hasMatch(iso);
+    final normalized = hasTimezone ? iso : '${iso}Z';
+    final dt = DateTime.parse(normalized).toLocal();
     const months = [
       'Jan',
       'Feb',
@@ -293,6 +303,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
                 const SizedBox(height: 14),
                 _anim(0.15, _TrackingCard(order: o)),
                 const SizedBox(height: 14),
+                if (o.deliveryPartner != null) ...[
+                  _anim(0.20, _DeliveryPartnerCard(partner: o.deliveryPartner!)),
+                  const SizedBox(height: 14),
+                ],
                 _anim(0.25, _ItemsCard(order: o)),
                 const SizedBox(height: 14),
                 _anim(0.35, _BillCard(order: o)),
@@ -431,7 +445,10 @@ class _TopBar extends StatelessWidget {
                     fontFamily: 'monospace',
                     letterSpacing: 0.8)),
           ])),
-          //   _IBtn(Icons.ios_share_rounded, () {}),
+          _IBtn(Icons.ios_share_rounded, () {
+            final text = 'Check out my order ${order.orderNumber} from ${order.restaurantName} on Food Regime!';
+            Share.share(text);
+          }),
         ]),
       );
 }
@@ -601,7 +618,7 @@ class _HeroCard extends StatelessWidget {
                               color: Colors.white)),
                     ]),
                   ),
-                  if (order.preparationTime != 0.0)
+                  if (order.preparationTime != 0.0 && ['placed', 'accepted'].contains(order.status?.toLowerCase()))
                     Container(
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       padding: const EdgeInsets.symmetric(
@@ -758,12 +775,13 @@ const _stepMeta = {
 
 List<_TrackingStep> _buildSteps(Data order) {
   final currentIndex = _statusOrder.indexOf(order.status ?? '');
+  final isDelivered = order.status == 'delivered';
 
   return List.generate(_statusOrder.length, (i) {
     final stepStatus = _statusOrder[i];
     final meta = _stepMeta[stepStatus]!;
-    final isDone = currentIndex > i;
-    final isActive = currentIndex == i;
+    final isDone = i <= currentIndex;
+    final isActive = i == currentIndex + 1 && order.status != 'cancelled' && order.status != 'rejected' && order.status != 'delivered';
 
     return _TrackingStep(
       label: meta.label,
@@ -924,11 +942,11 @@ class _TrackingCard extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  s.active ? 'In progress...' : s.label,
+                                  (s.active && order.status != 'delivered') ? 'In progress...' : s.label,
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: s.active ? kAccent : kTextLight,
-                                    fontStyle: s.active
+                                    color: (s.active && order.status != 'delivered') ? kAccent : kTextLight,
+                                    fontStyle: (s.active && order.status != 'delivered')
                                         ? FontStyle.italic
                                         : FontStyle.normal,
                                   ),
@@ -1065,29 +1083,56 @@ class _BillCard extends StatelessWidget {
 
   const _BillCard({required this.order});
 
+  String _formatFee(String? val) {
+    if (val == null) return "0";
+    final d = double.tryParse(val);
+    if (d == null) return val;
+    return d == d.toInt() ? d.toInt().toString() : d.toStringAsFixed(2);
+  }
+
   @override
   Widget build(BuildContext context) {
     final deliveryFeeVal = double.tryParse(order.deliveryFee ?? "") ?? 0;
     final platformFeeVal = double.tryParse(order.platformFee ?? "") ?? 0;
     final isFreeDelivery = deliveryFeeVal == 0;
     final isFreePlatform = platformFeeVal == 0;
+    final discountVal = double.tryParse(order.discountAmount ?? "") ?? 0;
+    final hasDiscount = discountVal > 0;
+    final walletVal = double.tryParse(order.walletDeduction ?? "") ?? 0;
+    final hasWalletDeduction = walletVal > 0;
 
     return _Card(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const _SectionLabel('Price Breakdown', icon: Icons.receipt_rounded),
-        _BillRow('Items Total', '₹${order.itemsTotal}'),
+        _BillRow('Items Total', '₹${_formatFee(order.itemsTotal)}'),
         const SizedBox(height: 10),
         _BillRow(
           'Delivery Fee',
-          isFreeDelivery ? 'FREE' : '₹${order.deliveryFee}',
+          isFreeDelivery ? 'FREE' : '₹${_formatFee(order.deliveryFee)}',
           vc: isFreeDelivery ? kGreen : null,
         ),
         const SizedBox(height: 10),
         _BillRow(
           'Platform Fee',
-          isFreePlatform ? 'FREE' : '₹${order.platformFee}',
+          isFreePlatform ? 'FREE' : '₹${_formatFee(order.platformFee)}',
           vc: isFreePlatform ? kGreen : null,
         ),
+        if (hasDiscount) ...[
+          const SizedBox(height: 10),
+          _BillRow(
+            order.couponCode != null ? 'Coupon (${order.couponCode})' : 'Discount',
+            '-₹${_formatFee(order.discountAmount)}',
+            vc: kGreen,
+          ),
+        ],
+        if (hasWalletDeduction) ...[
+          const SizedBox(height: 10),
+          _BillRow(
+            'Wallet Deduction',
+            '-₹${_formatFee(order.walletDeduction)}',
+            vc: kGreen,
+          ),
+        ],
         const SizedBox(height: 16),
         Container(
             height: 1,
@@ -1722,6 +1767,106 @@ class _ReviewSubmittedCard extends StatelessWidget {
             style: TextStyle(fontSize: 13, color: kTextLight),
           ),
           const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Delivery Partner Card ──────────────────────────────────────────────────────
+class _DeliveryPartnerCard extends StatelessWidget {
+  final DeliveryPartner partner;
+
+  const _DeliveryPartnerCard({required this.partner});
+
+  @override
+  Widget build(BuildContext context) {
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionLabel('Delivery Partner', icon: Icons.delivery_dining_rounded),
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: kSurface2,
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(Icons.person_rounded, color: kTextMid, size: 24),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      partner.name ?? 'Rider',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: kText,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.star_rounded, size: 14, color: kOrange),
+                        const SizedBox(width: 4),
+                        Text(
+                          partner.averageRating?.toStringAsFixed(1) ?? 'New',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: kTextMid,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: kSurface2,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            partner.vehicleNumber ?? '',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: kTextMid,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (partner.phone != null && partner.phone!.isNotEmpty)
+                GestureDetector(
+                  onTap: () async {
+                    final uri = Uri.parse('tel:${partner.phone}');
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri);
+                    }
+                  },
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: kGreenLight,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: kGreen.withOpacity(0.3)),
+                    ),
+                    child: const Icon(Icons.call_rounded, color: kGreen, size: 20),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );

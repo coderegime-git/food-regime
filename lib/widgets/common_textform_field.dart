@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_loader.dart';
 
@@ -13,6 +14,8 @@ class AppTextField extends StatelessWidget {
   final VoidCallback? onSuffix;
   final String? Function(String?)? validator;
   final String? Function(String?)? onChange;
+  final int? maxLength;
+  final List<TextInputFormatter>? inputFormatters;
 
   const AppTextField({
     required this.ctrl,
@@ -25,6 +28,8 @@ class AppTextField extends StatelessWidget {
     this.onSuffix,
     this.validator,
     this.onChange,
+    this.maxLength,
+    this.inputFormatters,
   });
 
   @override
@@ -36,6 +41,8 @@ class AppTextField extends StatelessWidget {
       validator: validator,
       onChanged: onChange,
       maxLines: maxLine,
+      maxLength: maxLength,
+      inputFormatters: inputFormatters,
       style: const TextStyle(
         fontFamily: _AppTokens.font,
         fontSize: 14,
@@ -49,6 +56,7 @@ class AppTextField extends StatelessWidget {
           fontSize: 14,
           color: _AppTokens.textDim,
         ),
+        counterText: "",
         filled: true,
         fillColor: _AppTokens.surface,
         contentPadding:

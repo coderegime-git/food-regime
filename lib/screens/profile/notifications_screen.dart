@@ -52,7 +52,7 @@ class _NotificationScreenState extends State<NotificationsScreen> {
 
     setState(() => _markingAll = true);
     try {
-      //await _apiService.markAllNotificationsRead(); // your API call
+      await _apiService.markAllNotificationsRead(); // your API call
       // Optimistic update – flip all locally
       for (final n in _notificationData!.data!) {
         n.isRead = true;
