@@ -1,7 +1,7 @@
 name: food_delivery_app
 description: A modern food delivery application built with Flutter.
 publish_to: 'none'
-version: 1.0.0+10
+version: 1.0.0+11
 
 environment:
   sdk: '>=3.2.5 <4.0.0'
