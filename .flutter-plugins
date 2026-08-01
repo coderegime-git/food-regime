@@ -1,10 +1,10 @@
 # This is a generated file; do not edit or check into version control.
-audio_session=C:\\Users\\CODE REGIME\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\audio_session-0.1.25\\
+audio_session=C:\\Users\\CODE REGIME\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\audio_session-0.2.4\\
 connectivity_plus=C:\\Users\\CODE REGIME\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\connectivity_plus-6.1.5\\
-firebase_core=C:\\Users\\CODE REGIME\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\firebase_core-4.6.0\\
-firebase_core_web=C:\\Users\\CODE REGIME\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\firebase_core_web-3.5.1\\
-firebase_messaging=C:\\Users\\CODE REGIME\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\firebase_messaging-16.1.3\\
-firebase_messaging_web=C:\\Users\\CODE REGIME\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\firebase_messaging_web-4.1.4\\
+firebase_core=C:\\Users\\CODE REGIME\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\firebase_core-4.12.1\\
+firebase_core_web=C:\\Users\\CODE REGIME\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\firebase_core_web-3.9.1\\
+firebase_messaging=C:\\Users\\CODE REGIME\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\firebase_messaging-16.4.3\\
+firebase_messaging_web=C:\\Users\\CODE REGIME\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\firebase_messaging_web-4.2.3\\
 flutter_local_notifications=C:\\Users\\CODE REGIME\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\flutter_local_notifications-19.5.0\\
 flutter_local_notifications_linux=C:\\Users\\CODE REGIME\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\flutter_local_notifications_linux-6.0.0\\
 flutter_local_notifications_windows=C:\\Users\\CODE REGIME\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\flutter_local_notifications_windows-1.0.3\\
