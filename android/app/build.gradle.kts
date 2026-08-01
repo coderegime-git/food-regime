@@ -34,7 +34,7 @@ android {
 
     defaultConfig {
         applicationId = "com.app.foodregime"
-        minSdk = 23
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
