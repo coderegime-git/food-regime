@@ -45,10 +45,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     print(token);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (token == null || token.isEmpty) {
-        await context.push(AppRoutes.loginPath(false));
+        context.go(AppRoutes.loginPath(false));
       }
-
-      //}
     });
     data = SharedPreferenceHelper.getUserObject();
 

@@ -73,6 +73,7 @@ class _PhoneEntryState extends State<LoginScreen>
             code: _code,
             phone: _ctrl.text.trim(),
             otp: data['otp'].toString(),
+            isGuest: widget.isGuest,
           ),
         ));
       } else {
@@ -135,7 +136,7 @@ class _PhoneEntryState extends State<LoginScreen>
                                       if (widget.isGuest == false) {
                                         if (mounted) context.go(AppRoutes.home);
                                       } else {
-                                        if (mounted) context.canPop();
+                                        if (mounted) context.pop();
                                       }
                                     },
                                     child: Container(
@@ -302,9 +303,10 @@ class OtpVerifyScreen extends StatefulWidget {
   final String code;
   final String phone;
   final String otp;
+  final bool? isGuest;
 
   const OtpVerifyScreen(
-      {super.key, required this.code, required this.phone, required this.otp});
+      {super.key, required this.code, required this.phone, required this.otp, this.isGuest = false});
 
   @override
   State<OtpVerifyScreen> createState() => _OtpVerifyState();
@@ -506,7 +508,14 @@ class _OtpVerifyState extends State<OtpVerifyScreen>
             await context.push(AppRoutes.editProfilePath("fromHome"));
           }
         } else {
-          if (mounted) context.go(AppRoutes.home);
+          if (widget.isGuest == true) {
+            if (mounted) {
+              Navigator.of(context).pop();
+              context.pop();
+            }
+          } else {
+            if (mounted) context.go(AppRoutes.home);
+          }
         }
       } else {
         setState(() {

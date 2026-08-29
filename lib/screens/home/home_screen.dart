@@ -264,30 +264,34 @@ class _HomeScreenState extends State<HomeScreen>
   Future<void> getHomeData() async {
     setState(() => isLoad = true);
 
-    // Read lat/long from the user's saved default address
-    profileData = SharedPreferenceHelper.getUserObject();
-    final addr = profileData?.data?.defaultAddress;
-    final double? lat = addr?.latitude;
-    final double? lng = addr?.longitude;
+    try {
+      // Read lat/long from the user's saved default address
+      profileData = SharedPreferenceHelper.getUserObject();
+      final addr = profileData?.data?.defaultAddress;
+      final double? lat = addr?.latitude;
+      final double? lng = addr?.longitude;
 
-    homeData = await apiService.getHomeData(1, latitude: lat, longitude: lng);
-    if (homeData.data != null) {
-      restaurantList = homeData.restaurants?.results ?? [];
+      homeData = await apiService.getHomeData(1, latitude: lat, longitude: lng);
+      if (homeData.data != null) {
+        restaurantList = homeData.restaurants?.results ?? [];
 
-      AppConstants.coupons = homeData.data!.coupons;
-      AppConstants.categories = homeData.data!.categories;
-    }
-    if (profileData?.data != null) {
-      String? token = SharedPreferenceHelper.getAuthToken();
-      if (token != null && token.isNotEmpty) {
-        final user = profileData!.data!;
-        if (user.defaultAddress == null) await buildAddress();
-        if ((user.name ?? '').isEmpty) await _goToEditProfile();
+        AppConstants.coupons = homeData.data!.coupons;
+        AppConstants.categories = homeData.data!.categories;
       }
-      await _fetchCart();
+      if (profileData?.data != null) {
+        String? token = SharedPreferenceHelper.getAuthToken();
+        if (token != null && token.isNotEmpty) {
+          final user = profileData!.data!;
+          if (user.defaultAddress == null) await buildAddress();
+          if ((user.name ?? '').isEmpty) await _goToEditProfile();
+        }
+        await _fetchCart();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isLoad = false);
+      }
     }
-
-    setState(() => isLoad = false);
   }
 
   Future<void> _goToEditProfile() async {
@@ -396,6 +400,13 @@ class _HomeScreenState extends State<HomeScreen>
                 height: kIsWeb ? 110 : 90,
                 width: double.infinity,
                 fit: BoxFit.cover,
+                errorWidget: (_, __, ___) => Container(
+                  height: kIsWeb ? 110 : 90,
+                  color: Colors.grey.shade200,
+                  child: const Center(
+                    child: Icon(Icons.restaurant, size: 30, color: Colors.grey),
+                  ),
+                ),
               ),
             ),
 
@@ -426,11 +437,17 @@ class _HomeScreenState extends State<HomeScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("⭐ ${restaurant.rating?.average ?? 0}",
-                          style: const TextStyle(
-                              fontSize: 11, color: Colors.grey)),
-                      Text("${restaurant.distance ?? 0} km",
-                          style: const TextStyle(fontSize: 11)),
+                      if ((restaurant.rating?.average ?? 0) > 0)
+                        Text("⭐ ${restaurant.rating?.average}",
+                            style: const TextStyle(
+                                fontSize: 11, color: Colors.grey))
+                      else
+                        const SizedBox.shrink(),
+                      if ((restaurant.distance ?? 0) > 0)
+                        Text("${restaurant.distance} km",
+                            style: const TextStyle(fontSize: 11))
+                      else
+                        const SizedBox.shrink(),
                     ],
                   ),
                 ],
@@ -846,23 +863,10 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
   late final PageController _pageCtrl;
   int _currentPage = 0;
 
-  // Food GIF URLs (looping food animations from giphy public CDN)
   static const _foodGifs = [
-    // burger sizzle
     'assets/images/flash-sale.mp4',
-    'assets/images/festival-offer.mp4',
-
+    'assets/images/discount.mp4',
     'assets/images/banner.jpg',
-
-    'assets/images/flash-sale.mp4',
-    'assets/images/festival-offer.mp4',
-    'assets/images/flash-sale.mp4',
-
-    // pizza
-    'assets/images/festival-offer.mp4',
-    // noodles
-    'assets/images/flash-sale.mp4',
-    // tacos
   ];
 
   static const _offerColors = [
@@ -930,7 +934,7 @@ class _HeroStackState extends State<_HeroStack> with TickerProviderStateMixin {
                 ),
                 child: _AnimatedFoodGif(
                   gifUrls: _foodGifs,
-                  pageIndex: _currentPage,
+                  pageIndex: _currentPage % _foodGifs.length,
                 ),
               ),
             ),
@@ -2049,35 +2053,36 @@ class _RestaurantCardState extends State<_RestaurantCard> {
                 //   ),
                 // ),
                 // Rating badge (top-left)
-                Positioned(
-                  top: 10,
-                  left: 10,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: _ratingColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.star_rounded,
-                            color: Colors.white, size: 11),
-                        const SizedBox(width: 3),
-                        Text(
-                          r.rating?.average?.toString() ?? '—',
-                          style: const TextStyle(
-                            fontFamily: _T.font,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                if ((r.rating?.average ?? 0) > 0)
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: _ratingColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star_rounded,
+                              color: Colors.white, size: 11),
+                          const SizedBox(width: 3),
+                          Text(
+                            r.rating?.average?.toString() ?? '—',
+                            style: const TextStyle(
+                              fontFamily: _T.font,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
 
@@ -2115,15 +2120,18 @@ class _RestaurantCardState extends State<_RestaurantCard> {
                     spacing: 8,
                     runSpacing: 6,
                     children: [
-                      _Chip(
-                        Icons.access_time_rounded,
-                        r.distance?.toString() ?? '',
-                        const Color(0xFF1565C0),
-                      ),
+                      if (r.distance != null && r.distance! > 0)
+                        _Chip(
+                          Icons.access_time_rounded,
+                          '${r.distance} km', // Or 'min' depending on your backend
+                          const Color(0xFF1565C0),
+                        ),
                       _Chip(
                         Icons.delivery_dining_rounded,
-                        r.deliveryFee ?? '',
-                        (r.deliveryFee?.startsWith('Free') == true)
+                        (r.deliveryFee?.toLowerCase() == 'free' || r.deliveryFee == '0' || r.deliveryFee == '0.0')
+                            ? 'Free'
+                            : (r.deliveryFee?.startsWith('₹') == true ? r.deliveryFee! : '₹${r.deliveryFee}'),
+                        (r.deliveryFee?.toLowerCase() == 'free' || r.deliveryFee == '0' || r.deliveryFee == '0.0')
                             ? const Color(0xFF2E7D32)
                             : const Color(0xFF5D4037),
                       ),

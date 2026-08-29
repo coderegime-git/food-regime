@@ -551,6 +551,10 @@ class _AddMoneySheetState extends State<_AddMoneySheet> {
       setState(() => _error = 'Minimum amount is ₹10');
       return;
     }
+    if (amt > 100000) {
+      setState(() => _error = 'Maximum amount is ₹100,000');
+      return;
+    }
 
     setState(() {
       _loading = true;
@@ -742,14 +746,14 @@ class _AddMoneySheetState extends State<_AddMoneySheet> {
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(
                           RegExp(r'^\d+\.?\d{0,2}')),
+                      LengthLimitingTextInputFormatter(7),
                     ],
                     style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
                         color: _kText),
                     decoration: InputDecoration(
-                      fillColor: Colors.white,
-                      filled: true,
+                      filled: false,
                       hintText:
                           _selected != null ? '${_selected!.toInt()}' : '0',
                       hintStyle: TextStyle(

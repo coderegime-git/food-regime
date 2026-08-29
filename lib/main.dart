@@ -76,24 +76,12 @@ class _FoodieGoAppState extends State<FoodieGoApp> {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-      // builder: (context, child) {
-      //   final width = MediaQuery.of(context).size.width;
-      //
-      //   double maxWidth = double.infinity;
-      //
-      //   if (width > 1200) {
-      //     maxWidth = 1200;
-      //   } else if (width > 800) {
-      //     maxWidth = 900;
-      //   }
-      //
-      //   return Center(
-      //     child: SizedBox(
-      //       width: maxWidth,
-      //       child: child,
-      //     ),
-      //   );
-      // },
+      builder: (context, child) {
+        return GestureDetector(
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          child: child,
+        );
+      },
       // Localization (extend as needed)
       // localizationsDelegates: AppLocalizations.localizationsDelegates,
       // supportedLocales: AppLocalizations.supportedLocales,

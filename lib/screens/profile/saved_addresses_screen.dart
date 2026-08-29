@@ -875,6 +875,9 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
       child: AppTextField(
         ctrl: controller,
         hint: hint,
+        maxLine: maxLines,
+        keyboard: keyboardType,
+        inputFormatters: inputFormatters,
         validator: validator,
       ),
     );

@@ -206,10 +206,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
-      if (widget.fromHome != true) {
-        Navigator.pop(context, updated);
-      } else {
-        if (mounted) context.go(AppRoutes.home);
+      if (mounted) {
+        context.pop(updated);
       }
     }
   }
@@ -227,34 +225,45 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ? AppDefaultLoader(loading: isLoad)
             : Form(
                 key: _formKey,
-                child: ListView(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Column(
                   children: [
-                    _buildAvatarSection(),
-                    const SizedBox(height: 28),
-                    _buildSectionLabel('Personal Info'),
-                    const SizedBox(height: 12),
-                    _buildCard([
-                      _buildNameField(),
-                      // _buildDivider(),
-                      _buildDobField(),
-                      //_buildDivider(),
-                      _buildGenderField(),
-                    ]),
-                    const SizedBox(height: 28),
-                    _buildSectionLabel('Food Preferences'),
-                    const SizedBox(height: 12),
-                    _buildCard([
-                      _buildVegToggle(),
-                      _buildDivider(),
-                      _buildSpiceLevelField(),
-                    ]),
-                    const SizedBox(height: 40),
-                    _buildSaveButton(),
-                    const SizedBox(height: 32),
+                    Expanded(
+                      child: ListView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 8),
+                        children: [
+                          _buildAvatarSection(),
+                          const SizedBox(height: 28),
+                          _buildSectionLabel('Personal Info'),
+                          const SizedBox(height: 12),
+                          _buildCard([
+                            _buildNameField(),
+                            // _buildDivider(),
+                            _buildDobField(),
+                            //_buildDivider(),
+                            _buildGenderField(),
+                          ]),
+                          const SizedBox(height: 28),
+                          _buildSectionLabel('Food Preferences'),
+                          const SizedBox(height: 12),
+                          _buildCard([
+                            _buildVegToggle(),
+                            _buildDivider(),
+                            _buildSpiceLevelField(),
+                          ]),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                    SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                            left: 20, right: 20, bottom: 20, top: 8),
+                        child: _buildSaveButton(),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -563,6 +572,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       height: 54,
+      width: double.infinity,
       child: ElevatedButton(
         onPressed: _isSaving ? null : _save,
         style: ElevatedButton.styleFrom(

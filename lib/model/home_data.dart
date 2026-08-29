@@ -225,7 +225,10 @@ class PopularFood {
     restaurant = json['restaurant'] != null
         ? RestaurantInfo.fromJson(json['restaurant'])
         : null;
-    image = json['image'];
+    final img = json['image']?.toString().trim();
+    image = (img == null || img.isEmpty || img == 'null' || !img.startsWith('http'))
+        ? "https://lh3.googleusercontent.com/gps-cs-s/AHVAwepJq6ir47u82guAVTnYkHeVg8MuVUHxZ6Qrxvz58KqAEZiYlo6L9ZdXZsIrRNEnKnF2sxO5HckpbQkLqpSTOCszYxjC7fn_Z26E3zOIipqS91PvSiJj-YO-8rILHnm2A7umIkYPxQ=s1360-w1360-h1020-rw"
+        : img;
   }
 
   Map<String, dynamic> toJson() {
@@ -293,7 +296,7 @@ class Restaurant {
     businessName = json['business_name'];
     ownerName = json['owner_name'];
     phone = json['phone'];
-    deliveryFee = json['deliveryFee'] ?? "0";
+    deliveryFee = json['delivery_fee']?.toString() ?? json['deliveryFee']?.toString() ?? "0";
     pincode = json['pincode'];
     isAcceptingOrders = json['is_accepting_orders'];
     rating = json['rating'] != null ? Rating.fromJson(json['rating']) : null;
@@ -302,8 +305,10 @@ class Restaurant {
         : null;
     availability = json['availability'];
     address = json['address'];
-    image = json['image'] ??
-        "https://lh3.googleusercontent.com/gps-cs-s/AHVAwepJq6ir47u82guAVTnYkHeVg8MuVUHxZ6Qrxvz58KqAEZiYlo6L9ZdXZsIrRNEnKnF2sxO5HckpbQkLqpSTOCszYxjC7fn_Z26E3zOIipqS91PvSiJj-YO-8rILHnm2A7umIkYPxQ=s1360-w1360-h1020-rw";
+    final img = json['image']?.toString().trim();
+    image = (img == null || img.isEmpty || img == 'null' || !img.startsWith('http'))
+        ? "https://lh3.googleusercontent.com/gps-cs-s/AHVAwepJq6ir47u82guAVTnYkHeVg8MuVUHxZ6Qrxvz58KqAEZiYlo6L9ZdXZsIrRNEnKnF2sxO5HckpbQkLqpSTOCszYxjC7fn_Z26E3zOIipqS91PvSiJj-YO-8rILHnm2A7umIkYPxQ=s1360-w1360-h1020-rw"
+        : img;
   }
 
   Map<String, dynamic> toJson() {

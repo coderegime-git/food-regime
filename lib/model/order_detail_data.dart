@@ -48,6 +48,7 @@ class Data {
   String? discountAmount;
   String? couponCode;
   String? walletDeduction;
+  String? cancelReason;
   DeliveryPartner? deliveryPartner;
 
   Data(
@@ -76,6 +77,7 @@ class Data {
       this.discountAmount,
       this.couponCode,
       this.walletDeduction,
+      this.cancelReason,
       this.deliveryPartner});
 
   Data.fromJson(Map<String, dynamic> json) {
@@ -115,6 +117,19 @@ class Data {
             ?.toString();
     couponCode = json['coupon_code']?.toString();
     walletDeduction = json['wallet_deduction']?.toString();
+    cancelReason = json['cancel_reason']?.toString() ?? json['cancellation_reason']?.toString() ?? json['reason']?.toString();
+    if ((status == 'cancelled' || status == 'rejected') && (cancelReason == null || cancelReason!.isEmpty)) {
+      cancelReason = json['rejection_reason']?.toString();
+    }
+    
+    // Clean up unwanted tags from reason
+    if (cancelReason != null) {
+      cancelReason = cancelReason!.replaceAll('[Restaurant] ', '').replaceAll('[Restaurant]', '').trim();
+    }
+    if ((status == 'cancelled' || status == 'rejected') && (cancelReason == null || cancelReason!.isEmpty)) {
+      print('=== CANCELLED ORDER WITH EMPTY REASON ===');
+      print('JSON Payload: $json');
+    }
     deliveryPartner = json['delivery_partner'] != null
         ? new DeliveryPartner.fromJson(json['delivery_partner'])
         : null;

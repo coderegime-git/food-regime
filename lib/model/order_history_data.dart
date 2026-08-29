@@ -63,6 +63,7 @@ class Results {
   String? status;
   String? createdAt;
   String? deliveredAt;
+  String? cancelReason;
   int? itemsCount;
 
   Results({this.id,
@@ -73,7 +74,8 @@ class Results {
     this.status,
     this.createdAt,
     this.deliveredAt,
-    this.itemsCount});
+    this.itemsCount,
+    this.cancelReason});
 
   Results.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -81,12 +83,21 @@ class Results {
     restaurantName = json['restaurant_name'];
     restaurantImage = json['restaurant_image'] ??
         "https://media.istockphoto.com/id/1829241109/photo/enjoying-a-brunch-together.jpg?s=612x612&w=0&k=20&c=9awLLRMBLeiYsrXrkgzkoscVU_3RoVwl_HA-OT-srjQ=";
-    ;
     totalAmount = json['total_amount'];
     status = json['status'];
     createdAt = json['created_at'];
     deliveredAt = json['delivered_at'];
     itemsCount = json['items_count'] is int ? json['items_count'] : int.tryParse(json['items_count']?.toString() ?? '');
+    
+    cancelReason = json['cancel_reason']?.toString() ?? json['cancellation_reason']?.toString() ?? json['reason']?.toString();
+    if ((status == 'cancelled' || status == 'rejected') && (cancelReason == null || cancelReason!.isEmpty)) {
+      cancelReason = json['rejection_reason']?.toString();
+    }
+
+    // Clean up unwanted tags from reason
+    if (cancelReason != null) {
+      cancelReason = cancelReason!.replaceAll('[Restaurant] ', '').replaceAll('[Restaurant]', '').trim();
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -100,6 +111,7 @@ class Results {
     data['created_at'] = this.createdAt;
     data['delivered_at'] = this.deliveredAt;
     data['items_count'] = this.itemsCount;
+    data['cancel_reason'] = this.cancelReason;
     return data;
   }
 }

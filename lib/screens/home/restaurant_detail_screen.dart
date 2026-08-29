@@ -387,27 +387,29 @@ class _RestaurantDetailPageState extends State<RestaurantDetailScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              _InfoChip(
-                icon: Icons.star_rounded,
-                iconColor: Colors.amber,
-                label: r.avgRating == 0
-                    ? 'New'
-                    : '${r.avgRating} (${r.totalRatings})',
-              ),
-              const SizedBox(width: 10),
-              _InfoChip(
-                icon: Icons.delivery_dining_outlined,
-                iconColor: kPrimary,
-                label: r.baseFee == 0
-                    ? 'Free Delivery'
-                    : '₹${r.baseFee.toStringAsFixed(0)}',
-              ),
-              const SizedBox(width: 10),
-              _InfoChip(
-                icon: Icons.access_time_rounded,
-                iconColor: kPrimary,
-                label: '30–40 min',
-              ),
+              if (r.avgRating > 0) ...[
+                _InfoChip(
+                  icon: Icons.star_rounded,
+                  iconColor: Colors.amber,
+                  label: '${r.avgRating} (${r.totalRatings})',
+                ),
+                const SizedBox(width: 10),
+              ],
+              if (r.baseFee > 0) ...[
+                _InfoChip(
+                  icon: Icons.delivery_dining_outlined,
+                  iconColor: kPrimary,
+                  label: '₹${r.baseFee.toStringAsFixed(0)}',
+                ),
+                const SizedBox(width: 10),
+              ],
+              if (r.distance != '0' && r.distance != '0.0') ...[
+                _InfoChip(
+                  icon: Icons.access_time_rounded,
+                  iconColor: kPrimary,
+                  label: '${r.distance} min',
+                ),
+              ],
             ],
           ),
         ],
@@ -637,7 +639,14 @@ class _MenuCard extends StatelessWidget {
                         imageUrl: item.image!,
                         width: 82,
                         height: 82,
-                        fit: BoxFit.cover)
+                        fit: BoxFit.cover,
+                        errorWidget: (_, __, ___) => Container(
+                          width: 82,
+                          height: 82,
+                          color: Colors.grey.shade200,
+                          child: const Icon(Icons.fastfood, color: Colors.grey),
+                        ),
+                      )
                     : Container(
                         width: 82,
                         height: 82,

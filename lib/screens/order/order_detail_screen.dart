@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../routes/app_routes.dart';
 import '../../utils/helper.dart';
+import 'package:intl/intl.dart';
 
 const kBg = Color(0xFFF7F6F3);
 const kSurface = Color(0xFFFFFFFF);
@@ -290,20 +291,26 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
     }
 
     final o = orderDetailData!.data!;
-    return Scaffold(
-      backgroundColor: kBg,
-      body: SafeArea(
-        child: Column(children: [
-          _anim(0.0, _TopBar(order: o)),
-          Expanded(
-            child: ListView(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        context.go(AppRoutes.orders);
+      },
+      child: Scaffold(
+        backgroundColor: kBg,
+        body: SafeArea(
+          child: Column(children: [
+            _anim(0.0, _TopBar(order: o)),
+            Expanded(
+              child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
               children: [
                 _anim(0.05, _HeroCard(order: o)),
                 const SizedBox(height: 14),
                 _anim(0.15, _TrackingCard(order: o)),
                 const SizedBox(height: 14),
-                if (o.deliveryPartner != null) ...[
+                if (o.deliveryPartner != null && o.deliveryPartner!.id != null) ...[
                   _anim(0.20, _DeliveryPartnerCard(partner: o.deliveryPartner!)),
                   const SizedBox(height: 14),
                 ],
@@ -413,7 +420,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
           ),
         ]),
       ),
-    );
+    ));
   }
 }
 
@@ -429,7 +436,7 @@ class _TopBar extends StatelessWidget {
         color: kBg,
         child: Row(children: [
           _IBtn(Icons.arrow_back_ios_new_rounded,
-              () => Navigator.maybePop(context)),
+              () => context.go(AppRoutes.orders)),
           Expanded(
               child: Column(children: [
             const Text('Order Details',
@@ -798,9 +805,8 @@ String? _getStepTime(Data order, String status) {
   if (status == 'placed' && order.createdAt != null) {
     final dt = DateTime.tryParse(order.createdAt!);
     if (dt != null) {
-      final h = dt.hour.toString().padLeft(2, '0');
-      final m = dt.minute.toString().padLeft(2, '0');
-      return '$h:$m';
+      final localDt = dt.toLocal();
+      return DateFormat('MMM d, h:mm a').format(localDt);
     }
   }
   return null;
@@ -842,15 +848,32 @@ class _TrackingCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      order.status == 'rejected'
-                          ? 'Your order was rejected by the restaurant.'
-                          : 'This order was cancelled.',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFFDC2626),
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          order.status == 'rejected'
+                              ? 'Your order was rejected by the restaurant.'
+                              : 'This order was cancelled.',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFDC2626),
+                          ),
+                        ),
+                        if (order.cancelReason != null &&
+                            order.cancelReason!.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Reason: ${order.cancelReason}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFFDC2626).withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
@@ -1101,6 +1124,9 @@ class _BillCard extends StatelessWidget {
     final walletVal = double.tryParse(order.walletDeduction ?? "") ?? 0;
     final hasWalletDeduction = walletVal > 0;
 
+    final totalVal = double.tryParse(order.totalAmount ?? "") ?? 0;
+    final isFullyWalletPaid = totalVal == 0 && hasWalletDeduction;
+
     return _Card(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const _SectionLabel('Price Breakdown', icon: Icons.receipt_rounded),
@@ -1173,9 +1199,10 @@ class _BillCard extends StatelessWidget {
                       BoxShadow(color: kShadow, blurRadius: 4)
                     ]),
                 child: Icon(
-                  order.paymentMethod!.toLowerCase() == 'cod'
+                  isFullyWalletPaid ? Icons.account_balance_wallet_rounded :
+                  (order.paymentMethod?.toLowerCase() == 'cod'
                       ? Icons.money_rounded
-                      : Icons.credit_card_rounded,
+                      : Icons.credit_card_rounded),
                   size: 16,
                   color: kTextMid,
                 )),
@@ -1185,9 +1212,10 @@ class _BillCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                   Text(
-                      order.paymentMethod!.toUpperCase() == 'COD'
+                      isFullyWalletPaid ? 'Wallet' :
+                      (order.paymentMethod?.toUpperCase() == 'COD'
                           ? 'Cash on Delivery'
-                          : order.paymentMethod!.toUpperCase(),
+                          : order.paymentMethod?.toUpperCase() ?? ''),
                       style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -1199,13 +1227,13 @@ class _BillCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
               decoration: BoxDecoration(
                   color:
-                      order.status == 'delivered' ? kGreenLight : kOrangeLight,
+                      (order.status == 'delivered' || isFullyWalletPaid) ? kGreenLight : kOrangeLight,
                   borderRadius: BorderRadius.circular(7)),
-              child: Text(order.status == 'delivered' ? 'PAID' : 'PENDING',
+              child: Text((order.status == 'delivered' || isFullyWalletPaid) ? 'PAID' : 'PENDING',
                   style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
-                      color: order.status == 'delivered' ? kGreen : kOrange,
+                      color: (order.status == 'delivered' || isFullyWalletPaid) ? kGreen : kOrange,
                       letterSpacing: 1.2,
                       fontFamily: 'monospace')),
             ),
@@ -1360,65 +1388,77 @@ class _ActionButtonsState extends State<_ActionButtons> {
     reLoad = widget.reLoad;
     return Column(children: [
       if (canReorder) ...[
-        SizedBox(
-          width: double.infinity,
-          height: 54,
-          child: ElevatedButton(
-            onPressed: widget.reOrderOnTap,
-            style: ElevatedButton.styleFrom(
-                backgroundColor: kAccent,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16))),
-            child: reLoad
-                ? AppDefaultLoader(
-                    loading: reLoad,
-                    color: const Color(0xFFDC2626),
-                  )
-                : const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                        Icon(Icons.replay_rounded, size: 18),
-                        SizedBox(width: 8),
-                        Text('Reorder Everything',
-                            style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.2)),
-                      ]),
+        GestureDetector(
+          onTap: reLoad ? null : widget.reOrderOnTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            width: reLoad ? 54 : MediaQuery.of(context).size.width - 32,
+            height: 54,
+            decoration: BoxDecoration(
+              color: kAccent,
+              borderRadius: BorderRadius.circular(reLoad ? 27 : 16),
+            ),
+            child: Center(
+              child: reLoad
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation(Colors.white)))
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                          Icon(Icons.replay_rounded, size: 18, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text('Reorder Everything',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.2)),
+                        ]),
+            ),
           ),
         ),
         const SizedBox(height: 10),
       ],
       if (canCancel) ...[
-        SizedBox(
-          width: double.infinity,
-          height: 54,
-          child: ElevatedButton(
-            onPressed: widget.onTap,
-            style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFDC2626),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16))),
-            child: isLoad
-                ? AppDefaultLoader(
-                    loading: isLoad,
-                    color: const Color(0xFFDC2626),
-                  )
-                : const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                        Icon(Icons.cancel_outlined, size: 18),
-                        SizedBox(width: 8),
-                        Text('Cancel Order',
-                            style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.2)),
-                      ]),
+        GestureDetector(
+          onTap: isLoad ? null : widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            width: isLoad ? 54 : MediaQuery.of(context).size.width - 32,
+            height: 54,
+            decoration: BoxDecoration(
+              color: const Color(0xFFDC2626),
+              borderRadius: BorderRadius.circular(isLoad ? 27 : 16),
+            ),
+            child: Center(
+              child: isLoad
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation(Colors.white)))
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                          Icon(Icons.cancel_outlined, size: 18, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text('Cancel Order',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.2)),
+                        ]),
+            ),
           ),
         ),
         const SizedBox(height: 10),

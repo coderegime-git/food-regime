@@ -24,8 +24,7 @@ class SearchRestaurant {
         pincode: j['pincode'],
         isAcceptingOrders: j['is_accepting_orders'],
         deliveryFee: j['delivery_fee_per_order'],
-        image: j['image'] ??
-            "https://pub-aaa82e9851064d22b954c3ebbafc9ae6.r2.dev/legacy/webp/grilled-meat-wrap-with-fresh-vegetables-and-fries-hwXO2VazvKWFcDsZwfo8W.webp",
+        image: (j['image'] != null && j['image'].toString().isNotEmpty) ? j['image'] : null,
       );
 }
 
@@ -55,8 +54,7 @@ class SearchDish {
         category: j['category'],
         restaurantId: j['restaurant']['id'],
         restaurantName: j['restaurant']['name'],
-        image: j['image'] ??
-            "https://pub-aaa82e9851064d22b954c3ebbafc9ae6.r2.dev/legacy/webp/grilled-meat-wrap-with-fresh-vegetables-and-fries-hwXO2VazvKWFcDsZwfo8W.webp",
+        image: (j['image'] != null && j['image'].toString().isNotEmpty) ? j['image'] : null,
       );
 }
 

@@ -30,8 +30,8 @@ const kGreenBg = Color(0xFFE6F9EE);
 class ConfirmOrderPage extends StatefulWidget {
   final Restaurant restaurant;
   final CartData cartData;
-  final ValueChanged<CartDataItem> onIncrement;
-  final ValueChanged<CartDataItem> onDecrement;
+  final Future<void> Function(CartDataItem) onIncrement;
+  final Future<void> Function(CartDataItem) onDecrement;
 
   const ConfirmOrderPage({
     super.key,
@@ -414,13 +414,11 @@ class _ConfirmOrderPageState extends State<ConfirmOrderPage>
                   _ConfirmCartRow(
                     item: e.value,
                     onInc: () async {
-                      widget.onIncrement(e.value);
-                      await Future.delayed(const Duration(seconds: 1));
+                      await widget.onIncrement(e.value);
                       await _fetchPreview();
                     },
                     onDec: () async {
-                      widget.onDecrement(e.value);
-                      await Future.delayed(const Duration(seconds: 1));
+                      await widget.onDecrement(e.value);
                       await _fetchPreview();
                     },
                   ),
@@ -659,7 +657,14 @@ class _ConfirmOrderPageState extends State<ConfirmOrderPage>
             activeColor: kPrimary,
             onChanged: (v) {
               HapticFeedback.selectionClick();
-              setState(() => _useWallet = v);
+              setState(() {
+                _useWallet = v;
+                if (_useWallet) {
+                  _payMethod = ''; // No payment method auto-selected
+                } else {
+                  _payMethod = 'cod'; // Auto-select COD when wallet is off
+                }
+              });
               _fetchPreview();
             },
           ),
@@ -698,62 +703,72 @@ class _ConfirmOrderPageState extends State<ConfirmOrderPage>
           _SectionLabel(icon: '💳', text: 'Payment Method'),
           const SizedBox(height: 10),
           ...methods.map((m) {
+            final isDisabled = _useWallet;
             final selected = _payMethod == m['value'];
             return GestureDetector(
-              onTap: () {
+              onTap: isDisabled ? () {
+                ScaffoldMessenger.of(context).removeCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Please turn off Wallet to select a payment method'),
+                  duration: Duration(seconds: 2),
+                ));
+              } : () {
                 HapticFeedback.selectionClick();
                 setState(() => _payMethod = m['value']!);
               },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                margin: const EdgeInsets.only(bottom: 8),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: selected ? kPrimaryLight : const Color(0xFFFAF8F6),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: selected ? kPrimary : Colors.grey.shade200,
-                    width: selected ? 1.5 : 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Text(m['icon']!, style: const TextStyle(fontSize: 20)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(m['label']!,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                  color: selected ? kPrimary : kText)),
-                          Text(m['sub']!,
-                              style: const TextStyle(
-                                  fontSize: 11, color: kSubText)),
-                        ],
-                      ),
+              child: Opacity(
+                opacity: isDisabled ? 0.4 : 1.0,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: selected ? kPrimaryLight : const Color(0xFFFAF8F6),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: selected ? kPrimary : Colors.grey.shade200,
+                      width: selected ? 1.5 : 1,
                     ),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: selected ? kPrimary : Colors.transparent,
-                        border: Border.all(
-                          color: selected ? kPrimary : Colors.grey.shade300,
-                          width: 2,
+                  ),
+                  child: Row(
+                    children: [
+                      Text(m['icon']!, style: const TextStyle(fontSize: 20)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(m['label']!,
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                    color: selected ? kPrimary : kText)),
+                            Text(m['sub']!,
+                                style: const TextStyle(
+                                    fontSize: 11, color: kSubText)),
+                          ],
                         ),
                       ),
-                      child: selected
-                          ? const Icon(Icons.check_rounded,
-                              color: Colors.white, size: 14)
-                          : const SizedBox.shrink(),
-                    ),
-                  ],
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: selected ? kPrimary : Colors.transparent,
+                          border: Border.all(
+                            color: selected ? kPrimary : Colors.grey.shade300,
+                            width: 2,
+                          ),
+                        ),
+                        child: selected
+                            ? const Icon(Icons.check_rounded,
+                                color: Colors.white, size: 14)
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -973,8 +988,8 @@ class _SectionLabel extends StatelessWidget {
 
 class _ConfirmCartRow extends StatelessWidget {
   final CartDataItem item;
-  final VoidCallback onInc;
-  final VoidCallback onDec;
+  final Future<void> Function() onInc;
+  final Future<void> Function() onDec;
 
   const _ConfirmCartRow(
       {required this.item, required this.onInc, required this.onDec});
@@ -1045,13 +1060,30 @@ class _ConfirmCartRow extends StatelessWidget {
 
 // ── Stepper ───────────────────────────────────────────────────────────────────
 
-class _Stepper extends StatelessWidget {
+class _Stepper extends StatefulWidget {
   final int value;
-  final VoidCallback onInc;
-  final VoidCallback onDec;
+  final Future<void> Function() onInc;
+  final Future<void> Function() onDec;
 
   const _Stepper(
       {required this.value, required this.onInc, required this.onDec});
+
+  @override
+  State<_Stepper> createState() => _StepperState();
+}
+
+class _StepperState extends State<_Stepper> {
+  bool _isLoading = false;
+
+  Future<void> _handle(Future<void> Function() action) async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    try {
+      await action();
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1065,16 +1097,22 @@ class _Stepper extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _btn(Icons.remove_rounded, onDec),
+          _btn(Icons.remove_rounded, () => _handle(widget.onDec)),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
-            child: Text('$value',
-                style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                    color: kPrimary)),
+            child: _isLoading 
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: kPrimary),
+                  )
+                : Text('${widget.value}',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                        color: kPrimary)),
           ),
-          _btn(Icons.add_rounded, onInc, filled: true),
+          _btn(Icons.add_rounded, () => _handle(widget.onInc), filled: true),
         ],
       ),
     );
@@ -1082,7 +1120,7 @@ class _Stepper extends StatelessWidget {
 
   Widget _btn(IconData icon, VoidCallback cb, {bool filled = false}) {
     return GestureDetector(
-      onTap: () {
+      onTap: _isLoading ? null : () {
         HapticFeedback.selectionClick();
         cb();
       },
@@ -1090,10 +1128,10 @@ class _Stepper extends StatelessWidget {
         width: 30,
         height: 30,
         decoration: BoxDecoration(
-          color: filled ? kPrimary : Colors.transparent,
+          color: filled ? (_isLoading ? kPrimary.withOpacity(0.5) : kPrimary) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, size: 14, color: filled ? Colors.white : kPrimary),
+        child: Icon(icon, size: 14, color: filled ? Colors.white : (_isLoading ? kPrimary.withOpacity(0.5) : kPrimary)),
       ),
     );
   }

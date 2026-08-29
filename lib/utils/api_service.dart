@@ -212,11 +212,10 @@ class ApiBaseHelper {
 
         throw Exception("Retry failed");
       } catch (err) {
-        // 🔥 VERY IMPORTANT: handle token expired
         if (err.toString().contains('token_expired')) {
           clearUserData();
           if (_navigatorKey.currentContext == null) return;
-          _navigatorKey.currentContext!.push(AppRoutes.loginPath(false));
+          _navigatorKey.currentContext!.go(AppRoutes.loginPath(false));
         }
 
         rethrow;

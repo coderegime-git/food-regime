@@ -133,7 +133,7 @@ class _MainShellState extends State<MainShell>
   }
 
   int _currentIndex(BuildContext context) {
-    final location = GoRouterState.of(context).matchedLocation;
+    final location = GoRouterState.of(context).uri.toString();
     final idx = _tabs.indexWhere((t) => location.startsWith(t.route));
     return idx == -1 ? 0 : idx;
   }
@@ -185,7 +185,7 @@ class _MainShellState extends State<MainShell>
 
   @override
   Widget build(BuildContext context) {
-    final currentLocation = GoRouterState.of(context).matchedLocation;
+    final currentLocation = GoRouterState.of(context).uri.toString();
     if (_previousLocation.contains('restaurant') &&
         !currentLocation.contains('restaurant')) {
       WidgetsBinding.instance.addPostFrameCallback((_) => fetchCart());
@@ -194,8 +194,16 @@ class _MainShellState extends State<MainShell>
 
     final currentIndex = _currentIndex(context);
 
-    return Scaffold(
-      extendBody: true,
+    return PopScope(
+      canPop: currentIndex == 0,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          context.go(AppRoutes.home);
+        });
+      },
+      child: Scaffold(
+        extendBody: true,
       backgroundColor: Colors.white,
       body: NotificationListener<ScrollNotification>(
         onNotification: (notification) {
@@ -276,11 +284,26 @@ class _MainShellState extends State<MainShell>
                   final isSelected = currentIndex == index;
 
                   return GestureDetector(
-                    onTap: () {
+                    onTap: () async {
                       if (!_isNavVisible) {
                         _isNavVisible = true;
                         _animController.reverse();
                       }
+
+                      if (t.route == AppRoutes.orders || t.route == AppRoutes.profile) {
+                        String? token = SharedPreferenceHelper.getAuthToken();
+                        if (token == null || token.isEmpty) {
+                          // Not logged in. Push login screen.
+                          await context.push(AppRoutes.loginPath(false));
+                          // Re-check after returning
+                          token = SharedPreferenceHelper.getAuthToken();
+                          if (token != null && token.isNotEmpty) {
+                            if (mounted) context.go(t.route);
+                          }
+                          return;
+                        }
+                      }
+
                       context.go(t.route);
                     },
                     child: AnimatedContainer(
@@ -322,7 +345,7 @@ class _MainShellState extends State<MainShell>
           ),
         ),
       ),
-    );
+    ));
   }
 }
 

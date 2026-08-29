@@ -50,10 +50,8 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
     return List.from(_allOrders);
   }
 
-  double get _totalSpent => _allOrders
-      .where((o) => o.status == 'delivered')
-      .fold(0.0, (s, o) => s + (num.tryParse(o.totalAmount.toString()) ?? 0))
-      .toDouble();
+  double _globalTotalSpent = 0.0;
+  double get _totalSpent => _globalTotalSpent;
 
   int _totalAllCount = 0;
   int _totalDeliveredCount = 0;
@@ -98,11 +96,15 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
         _totalAllCount = futures[0].data?.count ?? 0;
         _totalDeliveredCount = futures[1].data?.count ?? 0;
         _totalCancelledCount = futures[2].data?.count ?? 0;
+
+        final deliveredResults = futures[1].data?.results ?? [];
+        _globalTotalSpent = deliveredResults.fold(0.0, (s, o) => s + (num.tryParse(o.totalAmount.toString()) ?? 0)).toDouble();
       });
     } catch (_) {}
   }
 
   Future<void> _fetchPage(int page) async {
+    final requestedFilter = _filter;
     if (page == 1) {
       setState(() {
         if (_paginationLoading == true) {
@@ -115,11 +117,14 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
 
     try {
       final res = await _apiService.getOrderHistory(
-          pageNo: page.toString(), status: _filter);
+          pageNo: page.toString(), status: requestedFilter);
+      if (!mounted || requestedFilter != _filter) return;
+
       final newResults = res.data?.results ?? [];
       final nextUrl = res.data?.next; // null when no more pages
 
       setState(() {
+        if (page == 1) _allOrders.clear();
         _currentPage = page;
         _allOrders.addAll(newResults);
         _hasMore = nextUrl != null;
@@ -135,7 +140,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
     } catch (e, st) {
       debugPrint('[OrderHistory] _fetchPage error: $e');
       debugPrint(st.toString());
-      if (!mounted) return;
+      if (!mounted || requestedFilter != _filter) return;
       setState(() {
         _initialLoading = false;
         _paginationLoading = false;
@@ -542,6 +547,12 @@ class _OrderCard extends StatelessWidget {
       'bg': Color(0xFFFFEEEE),
       'fg': Color(0xFFDC2626)
     },
+    'rejected': {
+      'emoji': '❌',
+      'label': 'Rejected',
+      'bg': Color(0xFFFFEEEE),
+      'fg': Color(0xFFDC2626)
+    },
     'pending': {
       'emoji': '⏳',
       'label': 'Pending',
@@ -677,6 +688,23 @@ class _OrderCard extends StatelessWidget {
                 ],
               ),
             ),
+
+            if ((order.status == 'cancelled' || order.status == 'rejected') &&
+                order.cancelReason != null &&
+                order.cancelReason!.isNotEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                color: const Color(0xFFFFEEEE),
+                child: Text(
+                  'Reason: ${order.cancelReason}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFFDC2626),
+                  ),
+                ),
+              ),
 
             // ── Divider ───────────────────────────────────────────────────
             Divider(height: 1, color: Colors.grey.shade100),
